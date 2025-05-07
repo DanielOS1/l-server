@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { UserGroup } from 'src/group/entities/user-group.entity';
 //import { Rol } from './rol.entity';
 //import { AsignacionActividad } from './asignacion-actividad.entity';
 //import { PagoAporte } from './pago-aporte.entity';
@@ -46,9 +47,14 @@ export class User {
   @OneToMany(() => PagoAporte, pago => pago.usuario)
   pagos: PagoAporte[];
  */
+
+  @OneToMany(() => UserGroup, userGroup => userGroup.user)
+  userGroups: UserGroup[];
+
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
 }
