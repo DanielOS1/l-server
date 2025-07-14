@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn } from 'typeorm';
 import { UserGroup } from './user-group.entity';
+import { Role } from '../../role/entity/role.entity';
 
 @Entity('groups')
 export class Group {
@@ -20,4 +21,5 @@ export class Group {
 
   @OneToMany(() => UserGroup, userGroup => userGroup.group)
   userGroups: UserGroup[];
+
 }

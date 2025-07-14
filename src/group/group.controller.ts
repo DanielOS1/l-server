@@ -8,13 +8,12 @@ export class GroupController {
   constructor(private readonly groupService: GroupService) {}
 
   // Crear un grupo
-  @Post('create')
+  @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
-    @Body() createGroupDto: CreateGroupDto, 
-    @Query('userId') userId: string
+    @Body() createGroupDto: CreateGroupDto
   ): Promise<GroupResponseDto> {
-    return this.groupService.create(createGroupDto, userId);
+    return this.groupService.create(createGroupDto);
   }
 
   // Obtener un grupo por ID
@@ -34,8 +33,22 @@ export class GroupController {
   @HttpCode(HttpStatus.OK)
   addMember(
     @Param('groupId') groupId: string, 
-    @Query('userId') userId: string
+    @Body('userId') userId: string,
+    @Body('assignedByUserId') assignedByUserId: string
+
   ): Promise<GroupResponseDto> {
-    return this.groupService.addMember(groupId, userId);
+    return this.groupService.addMember(groupId, userId, assignedByUserId);
+  }
+
+  // Asignar rol a un miembro del grupo
+  @Post(':groupId/assign-role')
+  @HttpCode(HttpStatus.OK)
+  assignRole(
+    @Param('groupId') groupId: string,
+    @Body('userId') userId: string,
+    @Body('roleId') roleId: string,
+    @Body('assignedByUserId') assignedByUserId: string
+  ): Promise<GroupResponseDto> {
+    return this.groupService.assignRole(groupId, userId, roleId, assignedByUserId);
   }
 }
