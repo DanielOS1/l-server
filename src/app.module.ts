@@ -8,6 +8,9 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { GroupModule } from './group/group.module';
 import { RoleModule } from './role/role.module';
+import { SemesterController } from './semester/semester.controller';
+import { SemesterModule } from './semester/semester.module';
+import { PositionService } from './position/position.service';
 
 @Module({
   imports: [
@@ -36,8 +39,9 @@ import { RoleModule } from './role/role.module';
     UserModule,
     GroupModule,
     RoleModule,
+    SemesterModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, SemesterController],
+  providers: [AppService, PositionService],
 })
 export class AppModule {}
