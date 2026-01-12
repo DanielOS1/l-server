@@ -1,3 +1,5 @@
+import { Activity } from 'src/activity/entities/activity.entity';
+import { Position } from 'src/position/entities/position.entity';
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('semester')
@@ -13,7 +15,13 @@ export class Semester {
 
     @Column({ type: 'date' })
     endDate: Date;
-    
+
     @Column({ type: 'boolean', default: true })
     isActive: boolean;
+
+    @OneToMany(() => Position, position => position.semester)
+    positions: Position[];
+
+    @OneToMany(() => Activity, activity => activity.semester)
+    activities: Activity[];
 }

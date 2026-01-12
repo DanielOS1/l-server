@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDat
 import { Exclude } from 'class-transformer';
 import { UserGroup } from 'src/group/entities/user-group.entity';
 import { Role } from 'src/role/entity/role.entity';
+import { Assignment } from 'src/assignment/entities/assignment.entity';
 
 
 @Entity('user')
@@ -48,5 +49,8 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Assignment, assignment => assignment.user)
+  assignments: Assignment[];
 
 }

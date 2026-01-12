@@ -11,6 +11,11 @@ import { RoleModule } from './role/role.module';
 import { SemesterController } from './semester/semester.controller';
 import { SemesterModule } from './semester/semester.module';
 import { PositionService } from './position/position.service';
+import { ActivityController } from './activity/activity.controller';
+import { AssignmentController } from './assignment/assignment.controller';
+import { PositionModule } from './position/position.module';
+import { ActivityModule } from './activity/activity.module';
+import { AssignmentModule } from './assignment/assignment.module';
 
 @Module({
   imports: [
@@ -37,11 +42,14 @@ import { PositionService } from './position/position.service';
     }),
     AuthModule,
     UserModule,
+    AssignmentModule,
+    PositionModule,
+    ActivityModule,
+    SemesterModule,
     GroupModule,
     RoleModule,
-    SemesterModule,
   ],
-  controllers: [AppController, SemesterController],
+  controllers: [AppController, SemesterController, ActivityController, AssignmentController],
   providers: [AppService, PositionService],
 })
 export class AppModule {}
