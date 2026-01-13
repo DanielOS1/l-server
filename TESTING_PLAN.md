@@ -1,6 +1,6 @@
 # Plan de Pruebas: Funcionalidades Básicas del Sistema
 
-Este documento describe los pasos para probar el flujo completo desde el registro de usuario hasta la gestión de grupos.
+Este documento describe los pasos para probar el flujo completo desde el registro de usuario hasta la gestión de grupos y roles.
 
 ## 1. Registro de Usuarios
 
@@ -55,7 +55,7 @@ Verifica que el usuario pueda iniciar sesión y obtener un rol de sistema.
 }
 ```
 
-**Respuesta Esperada:** Un objeto con el `access_token` y la información del usuario.
+> **IMPORTANTE:** Guarda el `access_token` de Juan (Owner) y Maria (Member). Los necesitarás para el Header `Authorization: Bearer <token>`.
 
 ---
 
@@ -64,6 +64,7 @@ Verifica que el usuario pueda iniciar sesión y obtener un rol de sistema.
 El Usuario 1 creará un nuevo grupo.
 
 **Endpoint:** `POST /groups`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
 
 **Payload:**
 Reemplaza `USER_ID_JUAN` con el ID real del Usuario 1.
@@ -82,6 +83,7 @@ Reemplaza `USER_ID_JUAN` con el ID real del Usuario 1.
 2.  Deberías ver una sección `userGroups` donde `userId` coincide con `USER_ID_JUAN`.
 3.  Verifica que `isCreator` sea `true`.
 4.  **Crucial:** Verifica que dentro de `userGroups`, el objeto `groupRole` tenga `name: "OWNER"`.
+5.  **Nota el ID del Grupo (groupId)**.
 
 ---
 
@@ -90,7 +92,7 @@ Reemplaza `USER_ID_JUAN` con el ID real del Usuario 1.
 El Usuario 1 (Owner) agregará al Usuario 2 (Maria) al grupo.
 
 **Endpoint:** `POST /groups/:groupId/add-member`
-(Reemplaza `:groupId` en la URL con el ID del grupo creado en el paso anterior).
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
 
 **Payload:**
 
@@ -103,7 +105,56 @@ El Usuario 1 (Owner) agregará al Usuario 2 (Maria) al grupo.
 
 **Validación:**
 
-1.  Revisa la respuesta JSON actualizada del grupo.
-2.  Busca la nueva entrada en `userGroups` para Maria.
-3.  Verifica que su `groupRole` tenga `name: "MEMBER"`.
-4.  Verifica que `isCreator` sea `false`.
+1.  Busca la nueva entrada en `userGroups` para Maria.
+2.  Verifica que su `groupRole` tenga `name: "MEMBER"`.
+
+---
+
+## 5. Gestión de Roles de Grupo (Prueba de Seguridad)
+
+### 5.1 Crear Rol como Owner (Debe funcionar)
+
+**Endpoint:** `POST /group-roles`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Líder Técnico",
+  "description": "Responsable técnico del equipo",
+  "groupId": "GROUP_ID"
+}
+```
+
+**Esperado:** 201 Created. Retorna el nuevo rol.
+
+### 5.2 Listar Roles como Miembro (Debe funcionar)
+
+**Endpoint:** `GET /group-roles?groupId=GROUP_ID`
+**Header:** `Authorization: Bearer <TOKEN_MARIA>`
+
+**Esperado:** 200 OK. Lista de roles incluyendo "Líder Técnico", "OWNER" y "MEMBER".
+
+### 5.3 Crear Rol como Miembro (Debe fallar)
+
+**Endpoint:** `POST /group-roles`
+**Header:** `Authorization: Bearer <TOKEN_MARIA>`
+
+**Payload:**
+
+```json
+{
+  "name": "Hacker Role",
+  "groupId": "GROUP_ID"
+}
+```
+
+**Esperado:** 403 Forbidden. "Only the group owner can manage roles".
+
+### 5.4 Eliminar Rol como Owner (Debe funcionar)
+
+**Endpoint:** `DELETE /group-roles/:roleId`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Esperado:** 200 OK.
