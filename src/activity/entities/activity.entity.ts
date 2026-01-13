@@ -1,5 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
-import { Semester } from '../../semester/entities/semester.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
+import { Semester } from 'src/group/semester/entities/semester.entity';
 import { Assignment } from 'src/assignment/entities/assignment.entity';
 
 @Entity('activities')
@@ -16,10 +22,9 @@ export class Activity {
   @Column({ length: 200 })
   location: string;
 
-  @ManyToOne(() => Semester, semester => semester.activities)
+  @ManyToOne(() => Semester, (semester) => semester.activities)
   semester: Semester;
 
-  @OneToMany(() => Assignment, assignment => assignment.activity)
+  @OneToMany(() => Assignment, (assignment) => assignment.activity)
   assignments: Assignment[];
-
 }

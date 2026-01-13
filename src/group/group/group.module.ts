@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Group } from './entities/group.entity';
-import { UserGroup } from './entities/user-group.entity';
-import { UserGroupRole } from './entities/user-group-role.entity';
+import { UserGroup } from '../user-group/entities/user-group.entity';
 import { GroupService } from './group.service';
 import { GroupController } from './group.controller';
-import { UserModule } from '../user/user.module';
-import { RoleModule } from '../role/role.module'; // Asegúrate de importar RoleModule
+import { UserModule } from '../../user/user.module';
+import { RoleModule } from '../../system/role/role.module';
+import { GroupRole } from '../group-role/entities/group-role.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Group, UserGroup, UserGroupRole]),
+    TypeOrmModule.forFeature([Group, UserGroup, GroupRole]),
     UserModule,
-    RoleModule, // Esto es crucial
+    RoleModule,
   ],
   providers: [GroupService],
   controllers: [GroupController],

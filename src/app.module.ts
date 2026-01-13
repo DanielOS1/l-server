@@ -6,16 +6,19 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { GroupModule } from './group/group.module';
-import { RoleModule } from './role/role.module';
-import { SemesterController } from './semester/semester.controller';
-import { SemesterModule } from './semester/semester.module';
+import { GroupModule } from './group/group/group.module';
+import { RoleModule } from './system/role/role.module';
+import { SemesterController } from 'src/group/semester/semester.controller';
+import { SemesterModule } from 'src/group/semester/semester.module';
 import { PositionService } from './position/position.service';
 import { ActivityController } from './activity/activity.controller';
 import { AssignmentController } from './assignment/assignment.controller';
 import { PositionModule } from './position/position.module';
 import { ActivityModule } from './activity/activity.module';
 import { AssignmentModule } from './assignment/assignment.module';
+import { GroupRoleModule } from './group/group-role/group-role.module';
+
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
@@ -25,20 +28,7 @@ import { AssignmentModule } from './assignment/assignment.module';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: parseInt(configService.get('DATABASE_PORT') || '5432'),
-        username: configService.get('DATABASE_USERNAME'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
-        entities: [__dirname + '/**/*.entity.{ts,js}'],
-        migrations: [__dirname + '/migrations/*.{ts,js}'],
-        synchronize: false,
-        logging: true,
-        migrationsTableName: "migrations",
-        autoLoadEntities: true, // Importante para NestJS
-      }),
+      useFactory: getDatabaseConfig,
     }),
     AuthModule,
     UserModule,
@@ -48,8 +38,14 @@ import { AssignmentModule } from './assignment/assignment.module';
     SemesterModule,
     GroupModule,
     RoleModule,
+    GroupRoleModule,
   ],
-  controllers: [AppController, SemesterController, ActivityController, AssignmentController],
+  controllers: [
+    AppController,
+    SemesterController,
+    ActivityController,
+    AssignmentController,
+  ],
   providers: [AppService, PositionService],
 })
 export class AppModule {}
