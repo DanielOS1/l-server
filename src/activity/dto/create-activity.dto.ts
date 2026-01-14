@@ -4,9 +4,10 @@ import {
   IsUUID,
   MaxLength,
   IsISO8601,
+  IsOptional,
 } from 'class-validator';
 
-export class CreateSemesterDto {
+export class CreateActivityDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
@@ -14,13 +15,18 @@ export class CreateSemesterDto {
 
   @IsISO8601()
   @IsNotEmpty()
-  startDate: Date;
+  date: Date;
 
-  @IsISO8601()
+  @IsString()
   @IsNotEmpty()
-  endDate: Date;
+  @MaxLength(200)
+  location: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
 
   @IsUUID()
   @IsNotEmpty()
-  groupId: string;
+  semesterId: string;
 }

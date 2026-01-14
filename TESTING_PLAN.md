@@ -158,3 +158,253 @@ El Usuario 1 (Owner) agregará al Usuario 2 (Maria) al grupo.
 **Header:** `Authorization: Bearer <TOKEN_JUAN>`
 
 **Esperado:** 200 OK.
+
+---
+
+## 6. Gestión de Períodos, Actividades y Cargos
+
+### 6.1 Crear un Semestre (Período)
+
+El Usuario 1 (Owner) creará un Semestre para el grupo.
+
+**Endpoint:** `POST /semester`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Primer Semestre 2026",
+  "startDate": "2026-03-01",
+  "endDate": "2026-07-31",
+  "groupId": "GROUP_ID"
+}
+```
+
+**Validación:**
+
+1.  Verifica que el `id` del semestre sea retornado.
+2.  Verifica que `isActive` sea `true` por defecto.
+3.  **Nota el ID del Semestre (SEMESTER_ID)**.
+
+### 6.2 Crear Cargos para el Semestre (Position)
+
+Definiremos un cargo disponible para este semestre (ej. "Coordinador de Evento").
+
+**Endpoint:** `POST /position`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Coordinador de Evento",
+  "description": "Encargado de la logística del evento",
+  "semesterId": "SEMESTER_ID"
+}
+```
+
+**Validación:**
+
+1.  Verifica que se cree correctamente.
+2.  **Nota el ID del Cargo (POSITION_ID)**.
+
+### 6.3 Crear una Actividad
+
+Crearemos una actividad dentro de las fechas del semestre.
+
+**Endpoint:** `POST /activity`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Bienvenida 2026",
+  "description": "Actividad de inicio de año",
+  "date": "2026-03-15T10:00:00Z",
+  "location": "Sede Central",
+  "semesterId": "SEMESTER_ID"
+}
+```
+
+**Validación:**
+
+1.  Verifica que la actividad se cree.
+2.  **Prueba de fallo (Opcional):** Intenta crear una actividad con fecha `2026-01-01` (fuera de rango). Debería fallar con `400 Bad Request`.
+3.  **Nota el ID de la Actividad (ACTIVITY_ID)**.
+
+### 6.4 Asignar un Usuario a un Cargo en la Actividad
+
+Asignaremos a Maria (Usuario 2) como Coordinadora para la Actividad "Bienvenida 2026".
+
+**Endpoint:** `POST /assignment`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "activityId": "ACTIVITY_ID",
+  "positionId": "POSITION_ID",
+  "userId": "USER_ID_MARIA",
+  "notes": "Asignada por experiencia previa"
+}
+```
+
+**Validación:**
+
+1.  Verifica que la asignación se guarde.
+2.  Puedes verificar listando las asignaciones de la actividad: `GET /assignment?activityId=ACTIVITY_ID`.
+
+---
+
+## 7. Gestión Financiera (Metas y Ventas)
+
+### 7.1 Crear una Meta de Grupo (Goal)
+
+El Owner definirá una meta financiera para el grupo.
+
+**Endpoint:** `POST /goal`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Recaudación Anual 2026",
+  "description": "Meta para financiar el viaje de fin de año",
+  "targetAmount": 5000000,
+  "startDate": "2026-03-01",
+  "groupId": "GROUP_ID",
+  "isActive": true
+}
+```
+
+**Validación:**
+
+1.  Verifica que se retorne la meta con `id`.
+2.  **Nota el ID de la Meta (GOAL_ID)**.
+
+### 7.2 Verificar Unicidad de Meta Activa (Prueba de Fallo)
+
+Intentar crear otra meta activa para el mismo grupo.
+
+**Endpoint:** `POST /goal`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Meta Duplicada",
+  "targetAmount": 1000,
+  "startDate": "2026-03-01",
+  "groupId": "GROUP_ID",
+  "isActive": true
+}
+```
+
+**Esperado:** `400 Bad Request`.
+
+### 7.3 Crear una Venta (Sale)
+
+Crearemos un evento de venta asociado a la meta.
+
+**Endpoint:** `POST /sale`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "name": "Venta de Completos",
+  "description": "Venta en el patio de la universidad",
+  "date": "2026-04-10T12:00:00Z",
+  "location": "Patio Central",
+  "goalId": "GOAL_ID"
+}
+```
+
+**Validación:**
+
+1.  Verifica que se cree la venta.
+2.  **Nota el ID de la Venta (SALE_ID)**.
+
+### 7.4 Listar Ventas de una Meta
+
+**Endpoint:** `GET /sale?goalId=GOAL_ID`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Validación:**
+
+1.  Debe retornar un array con la venta creada.
+
+### 7.5 Configurar Columnas de la Planilla
+
+Definiremos dos columnas: "Producto" (Texto) y "Monto" (Número, Funcional).
+
+**Endpoint:** `POST /sale-column`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Paso 1: Columna Producto**
+
+```json
+{
+  "name": "Producto",
+  "type": "TEXT",
+  "saleId": "SALE_ID",
+  "orderIndex": 1
+}
+```
+
+_Nota el ID de la Columna Producto (COL_PROD_ID)_.
+
+**Paso 2: Columna Monto**
+
+```json
+{
+  "name": "Monto",
+  "type": "NUMBER",
+  "saleId": "SALE_ID",
+  "isFunctionalAmount": true,
+  "orderIndex": 2
+}
+```
+
+_Nota el ID de la Columna Monto (COL_MONTO_ID)_.
+
+### 7.6 Agregar un Registro (Fila) a la Venta
+
+Agregaremos una venta de "Completo" por "2000".
+
+**Endpoint:** `POST /sale-row`
+**Header:** `Authorization: Bearer <TOKEN_JUAN>`
+
+**Payload:**
+
+```json
+{
+  "saleId": "SALE_ID",
+  "addedByUserId": "USER_ID_JUAN",
+  "values": [
+    { "columnId": "COL_PROD_ID", "value": "Completo" },
+    { "columnId": "COL_MONTO_ID", "value": "2000" }
+  ]
+}
+```
+
+**Validación:**
+
+1.  Verifica que se cree la fila.
+2.  Verifica la Venta (`GET /sale/SALE_ID`). El campo `totalAmount` debería ser ahora `2000`.
+
+### 7.7 Agregar otro Registro y Verificar Suma
+
+Agregaremos otro "Bebida" por "1000".
+
+**Payload:** Enviar nuevamente a `POST /sale-row` con valores "Bebida" y "1000".
+
+**Validación:**
+
+1.  Verifica la Venta de nuevo. `totalAmount` debería ser `3000`.

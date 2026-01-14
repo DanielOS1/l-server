@@ -8,15 +8,19 @@ import { ActivityModule } from '../activity/activity.module';
 import { PositionModule } from '../position/position.module';
 import { UserModule } from '../user/user.module';
 
+import { Activity } from '../activity/entities/activity.entity';
+import { Position } from '../position/entities/position.entity';
+import { User } from '../user/entities/user.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Assignment]),
+    TypeOrmModule.forFeature([Assignment, Activity, Position, User]),
     forwardRef(() => ActivityModule),
     forwardRef(() => PositionModule),
-    UserModule // UserModule no necesita forwardRef normalmente
+    UserModule,
   ],
   controllers: [AssignmentController],
   providers: [AssignmentService],
-  exports: [AssignmentService]
+  exports: [AssignmentService],
 })
 export class AssignmentModule {}

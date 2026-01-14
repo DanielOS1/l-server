@@ -19,6 +19,9 @@ export class Activity {
   @Column({ type: 'timestamp' })
   date: Date;
 
+  @Column({ type: 'text', nullable: true })
+  description: string;
+
   @Column({ length: 200 })
   location: string;
 

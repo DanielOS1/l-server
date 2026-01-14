@@ -9,6 +9,8 @@ import {
 import { UserGroup } from '../../user-group/entities/user-group.entity';
 import { Role } from '../../../system/role/entity/role.entity';
 import { GroupRole } from 'src/group/group-role/entities/group-role.entity';
+import { Semester } from '../../semester/entities/semester.entity';
+import { Goal } from '../../../finance/goal/entities/goal.entity';
 
 @Entity('groups')
 export class Group {
@@ -32,4 +34,10 @@ export class Group {
 
   @OneToMany(() => UserGroup, (userGroup) => userGroup.group)
   userGroups: UserGroup[];
+
+  @OneToMany(() => Semester, (semester) => semester.group)
+  semesters: Semester[];
+
+  @OneToMany(() => Goal, (goal) => goal.group)
+  goals: Goal[];
 }

@@ -6,9 +6,11 @@ import { SemesterController } from './semester.controller';
 import { PositionModule } from 'src/position/position.module';
 import { ActivityModule } from 'src/activity/activity.module';
 
+import { Group } from '../group/entities/group.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Semester]),
+    TypeOrmModule.forFeature([Semester, Group]),
     forwardRef(() => PositionModule),
     forwardRef(() => ActivityModule),
   ],
