@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  Query,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,13 +28,23 @@ export class UserController {
     return this.usuarioService.getAll();
   }
 
+  @Get('search')
+  async buscarPorEmail(@Query('email') email: string): Promise<User> {
+    const user = await this.usuarioService.findByEmail(email);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    return user;
+  }
+
   @Get(':id')
   obtenerPorId(@Param('id') id: string): Promise<User> {
     return this.usuarioService.getById(id);
   }
 
   @Put(':id')
-  actualizar(@Param('id') id: string, @Body() data: UpdateUserDto): Promise<User> {
+  actualizar(
+    @Param('id') id: string,
+    @Body() data: UpdateUserDto,
+  ): Promise<User> {
     return this.usuarioService.update(id, data);
   }
 

@@ -30,7 +30,10 @@ export class Group {
   createdAt: Date;
 
   @ManyToOne(() => GroupRole, { nullable: true })
-  groupRole: GroupRole;
+  groupRole: GroupRole; // Preserving existing, though functionality is unclear (maybe default role pointer?)
+
+  @OneToMany(() => GroupRole, (role) => role.group)
+  roles: GroupRole[];
 
   @OneToMany(() => UserGroup, (userGroup) => userGroup.group)
   userGroups: UserGroup[];

@@ -27,7 +27,12 @@ export class GroupService {
   async getById(id: string): Promise<GroupResponseDto> {
     const group = await this.groupRepository.findOne({
       where: { id },
-      relations: ['userGroups', 'userGroups.user', 'userGroups.groupRole'],
+      relations: [
+        'userGroups',
+        'userGroups.user',
+        'userGroups.groupRole',
+        'roles',
+      ],
     });
 
     if (!group) {
@@ -41,13 +46,39 @@ export class GroupService {
   //Obtener todos los grupos
   async getAll(): Promise<GroupResponseDto[]> {
     const groups = await this.groupRepository.find({
-      relations: ['userGroups', 'userGroups.user', 'userGroups.groupRole'],
+      relations: [
+        'userGroups',
+        'userGroups.user',
+        'userGroups.groupRole',
+        'roles',
+      ],
     });
 
     return plainToInstance(GroupResponseDto, groups, {
       excludeExtraneousValues: false,
     });
   }
+
+  // Obtener grupos de un usuario especifico
+  async getByUserId(userId: string): Promise<GroupResponseDto[]> {
+    const userGroups = await this.userGroupRepository.find({
+      where: { user: { id: userId } },
+      relations: [
+        'group',
+        'groupRole',
+        'group.userGroups',
+        'group.userGroups.user',
+        'group.roles',
+      ], // Bring dependencies for mapping
+    });
+
+    const groups = userGroups.map((ug) => ug.group);
+
+    return plainToInstance(GroupResponseDto, groups, {
+      excludeExtraneousValues: false,
+    });
+  }
+
   //Crear un grupo
   async create(createGroupDto: CreateGroupDto): Promise<GroupResponseDto> {
     // 1. Verificar usuario creador

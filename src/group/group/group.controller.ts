@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Body, Param, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { GroupService } from './group.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { GroupResponseDto } from './dto/group-response.dto';
@@ -10,9 +19,7 @@ export class GroupController {
   // Crear un grupo
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @Body() createGroupDto: CreateGroupDto
-  ): Promise<GroupResponseDto> {
+  create(@Body() createGroupDto: CreateGroupDto): Promise<GroupResponseDto> {
     return this.groupService.create(createGroupDto);
   }
 
@@ -28,14 +35,19 @@ export class GroupController {
     return this.groupService.getAll();
   }
 
+  // Obtener grupos de un usuario
+  @Get('user/:userId')
+  getByUserId(@Param('userId') userId: string): Promise<GroupResponseDto[]> {
+    return this.groupService.getByUserId(userId);
+  }
+
   // Agregar miembro a un grupo
   @Post(':groupId/add-member')
   @HttpCode(HttpStatus.OK)
   addMember(
-    @Param('groupId') groupId: string, 
+    @Param('groupId') groupId: string,
     @Body('userId') userId: string,
-    @Body('assignedByUserId') assignedByUserId: string
-
+    @Body('assignedByUserId') assignedByUserId: string,
   ): Promise<GroupResponseDto> {
     return this.groupService.addMember(groupId, userId, assignedByUserId);
   }
@@ -47,8 +59,13 @@ export class GroupController {
     @Param('groupId') groupId: string,
     @Body('userId') userId: string,
     @Body('roleId') roleId: string,
-    @Body('assignedByUserId') assignedByUserId: string
+    @Body('assignedByUserId') assignedByUserId: string,
   ): Promise<GroupResponseDto> {
-    return this.groupService.assignRole(groupId, userId, roleId, assignedByUserId);
+    return this.groupService.assignRole(
+      groupId,
+      userId,
+      roleId,
+      assignedByUserId,
+    );
   }
 }
