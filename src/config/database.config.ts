@@ -4,16 +4,33 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 export const getDatabaseConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => {
-  // Debug Log
-  console.log('🔍 DEBUG ENV VARS:');
+  // Option 1: Prefer DATABASE_URL (Standard in Railway/Heroku)
+  const databaseUrl = configService.get<string>('DATABASE_URL');
+
+  if (databaseUrl) {
+    console.log('✅ CONNECTING VIA DATABASE_URL');
+    return {
+      type: 'postgres',
+      url: databaseUrl,
+      entities: [__dirname + '/../**/*.entity.{ts,js}'],
+      synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.NODE_ENV !== 'production',
+      autoLoadEntities: true,
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
+    };
+  }
+
+  // Option 2: Individual Variables (Manual setup)
+  console.log('⚠️ DATABASE_URL missing. Trying individual variables...');
   console.log(' - HOST:', configService.get('DATABASE_HOST') || 'MISSING');
-  console.log(' - USER:', configService.get('DATABASE_USERNAME') || 'MISSING');
-  console.log(' - PASS Exists?:', !!configService.get('DATABASE_PASSWORD'));
 
   const password = configService.get<string>('DATABASE_PASSWORD');
   if (!password) {
     throw new Error(
-      'DATABASE_PASSWORD is not defined (Check Railway Variables in Backend Service)',
+      'DATABASE_PASSWORD is not defined. Set DATABASE_URL or individual vars.',
     );
   }
 
@@ -25,8 +42,12 @@ export const getDatabaseConfig = (
     password: password,
     database: configService.get<string>('DATABASE_NAME'),
     entities: [__dirname + '/../**/*.entity.{ts,js}'],
-    synchronize: process.env.NODE_ENV !== 'production', // Disable in production!
+    synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV !== 'production',
     autoLoadEntities: true,
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : false,
   };
 };
