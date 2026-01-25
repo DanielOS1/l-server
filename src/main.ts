@@ -6,6 +6,13 @@ import * as compression from 'compression';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
+  console.log(
+    '🔍 RAW PROCESS.ENV KEYS:',
+    Object.keys(process.env).filter(
+      (k) => k.startsWith('DATA') || k.startsWith('NODE'),
+    ),
+  );
+
   const app = await NestFactory.create(AppModule);
 
   // Security
