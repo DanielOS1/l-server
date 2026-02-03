@@ -24,7 +24,7 @@ import { getDatabaseConfig } from './config/database.config';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: true, // 👈 CLAVE
+      // ignoreEnvFile: true, // Removed to allow .env loading
       expandVariables: true,
     }),
     TypeOrmModule.forRootAsync({

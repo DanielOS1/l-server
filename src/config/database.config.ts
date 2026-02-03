@@ -36,7 +36,10 @@ export const getDatabaseConfig = (
       synchronize: process.env.NODE_ENV !== 'production', // Cuidado en prod
       logging: process.env.NODE_ENV !== 'production',
       autoLoadEntities: true,
-      ssl: { rejectUnauthorized: false }, // En Railway/Heroku esto es casi siempre obligatorio
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : undefined, // En Railway/Heroku esto es casi siempre obligatorio
     };
   }
 
@@ -65,6 +68,9 @@ export const getDatabaseConfig = (
     synchronize: process.env.NODE_ENV !== 'production',
     logging: process.env.NODE_ENV !== 'production',
     autoLoadEntities: true,
-    ssl: { rejectUnauthorized: false },
+    ssl:
+      process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: false }
+        : undefined,
   };
 };
