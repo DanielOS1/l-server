@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   console.log('🔍 FULL RAW ENV KEYS:', Object.keys(process.env).sort());
@@ -24,6 +25,7 @@ async function bootstrap() {
   // Global Pipe & Interceptor
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
   app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 }
