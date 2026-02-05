@@ -33,7 +33,7 @@ export const getDatabaseConfig = (
       type: 'postgres',
       url: databaseUrl,
       entities: [__dirname + '/../**/*.entity.{ts,js}'],
-      synchronize: process.env.NODE_ENV !== 'production', // Cuidado en prod
+      synchronize: true, // Cuidado en prod
       logging: process.env.NODE_ENV !== 'production',
       autoLoadEntities: true,
       ssl:
@@ -65,7 +65,7 @@ export const getDatabaseConfig = (
     password: password,
     database: configService.get<string>('DATABASE_NAME'),
     entities: [__dirname + '/../**/*.entity.{ts,js}'],
-    synchronize: process.env.NODE_ENV !== 'production',
+    synchronize: true, // 
     logging: process.env.NODE_ENV !== 'production',
     autoLoadEntities: true,
     ssl:
