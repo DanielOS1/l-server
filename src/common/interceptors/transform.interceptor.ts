@@ -6,21 +6,24 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ApiResponse } from '../interfaces/api-response.interface';
+import { SuccessResponse } from '../interfaces/api-response.interface';
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, ApiResponse<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  SuccessResponse<T>
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<ApiResponse<T>> {
+  ): Observable<SuccessResponse<T>> {
     return next.handle().pipe(
       map((data) => ({
-        status: 'success',
+        status: 'success' as const,
         message: 'Operation successful',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         data,
+        timestamp: new Date().toISOString(),
       })),
     );
   }
