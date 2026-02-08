@@ -9,6 +9,8 @@ import { Repository } from 'typeorm';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { Semester } from '../group/semester/entities/semester.entity';
+import { ActivityPosition } from './entities/activity-position.entity';
+import { Position } from '../position/entities/position.entity';
 
 @Injectable()
 export class ActivityService {
@@ -17,10 +19,12 @@ export class ActivityService {
     private readonly activityRepository: Repository<Activity>,
     @InjectRepository(Semester)
     private readonly semesterRepository: Repository<Semester>,
+    @InjectRepository(ActivityPosition)
+    private readonly activityPositionRepository: Repository<ActivityPosition>,
   ) {}
 
   async create(createActivityDto: CreateActivityDto): Promise<Activity> {
-    const { semesterId, date } = createActivityDto;
+    const { semesterId, date, activityPositions } = createActivityDto;
 
     const semester = await this.semesterRepository.findOne({
       where: { id: semesterId },
@@ -43,12 +47,27 @@ export class ActivityService {
       ...createActivityDto,
       semester,
     });
-    return this.activityRepository.save(activity);
+    const savedActivity = await this.activityRepository.save(activity);
+
+    if (activityPositions && activityPositions.length > 0) {
+      const positionsToSave = activityPositions.map((ap) => {
+        return this.activityPositionRepository.create({
+          activity: savedActivity,
+          position: { id: ap.positionId } as Position,
+          quantity: ap.quantity,
+        });
+      });
+      await this.activityPositionRepository.save(positionsToSave);
+      savedActivity.activityPositions = positionsToSave; // Populate for return
+    }
+
+    return savedActivity;
   }
 
   async findAllBySemester(semesterId: string): Promise<Activity[]> {
     return this.activityRepository.find({
       where: { semester: { id: semesterId } },
+      relations: ['activityPositions', 'activityPositions.position'],
       order: { date: 'ASC' },
     });
   }
@@ -56,7 +75,14 @@ export class ActivityService {
   async findOne(id: string): Promise<Activity> {
     const activity = await this.activityRepository.findOne({
       where: { id },
-      relations: ['semester'],
+      relations: [
+        'semester',
+        'activityPositions',
+        'activityPositions.position',
+        'assignments',
+        'assignments.user',
+        'assignments.position',
+      ],
     });
     if (!activity) {
       throw new NotFoundException('Activity not found');
@@ -84,7 +110,25 @@ export class ActivityService {
     }
 
     Object.assign(activity, updateActivityDto);
-    return this.activityRepository.save(activity);
+    const updatedActivity = await this.activityRepository.save(activity);
+
+    if (updateActivityDto.activityPositions) {
+      // Remove existing positions
+      await this.activityPositionRepository.delete({ activity: { id: id } });
+
+      // Add new positions
+      const positionsToSave = updateActivityDto.activityPositions.map((ap) => {
+        return this.activityPositionRepository.create({
+          activity: updatedActivity,
+          position: { id: ap.positionId } as Position,
+          quantity: ap.quantity,
+        });
+      });
+      await this.activityPositionRepository.save(positionsToSave);
+      updatedActivity.activityPositions = positionsToSave;
+    }
+
+    return this.findOne(id); // Return full object with relations
   }
 
   async remove(id: string): Promise<void> {

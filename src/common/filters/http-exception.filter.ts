@@ -1,52 +1,61 @@
 import {
-  ExceptionFilter,
-  Catch,
   ArgumentsHost,
+  Catch,
+  ExceptionFilter,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { ApiResponse } from '../interfaces/api-response.interface';
+import { HttpAdapterHost } from '@nestjs/core';
+import { ErrorReponse } from '../interfaces/api-response.interface';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
+  constructor(private readonly httpAdapaterHost: HttpAdapterHost) {}
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const { httpAdapter } = this.httpAdapaterHost;
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    const httpStatus =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
     let message = 'Error interno del servidor';
-    let data = null;
+    let errors: string[] | undefined;
 
     if (exception instanceof HttpException) {
-      status = exception.getStatus();
-      const responseBody = exception.getResponse();
+      const exceptionResponse = exception.getResponse();
 
-      if (typeof responseBody === 'string') {
-        message = responseBody;
-      } else if (typeof responseBody === 'object' && responseBody !== null) {
-        const body = responseBody as any;
-        // Prioritize 'message' from NestJS exceptions (often validation errors)
-        if (body.message) {
-          if (Array.isArray(body.message)) {
-            message = 'Error de validación';
-            data = body.message;
-          } else {
-            message = body.message;
-          }
+      if (typeof exceptionResponse === 'string') {
+        message = exceptionResponse;
+      } else if (
+        typeof exceptionResponse === 'object' &&
+        exceptionResponse !== null
+      ) {
+        const responseObj = exceptionResponse as {
+          message?: string | string[];
+          error?: string;
+        };
+        
+        // Handle class-validator array of errors
+        if (Array.isArray(responseObj.message)) {
+          message = 'Error de validación';
+          errors = responseObj.message;
+        } else if (typeof responseObj.message === 'string') {
+           message = responseObj.message;
+        } else if (responseObj.error) {
+           message = responseObj.error;
         }
       }
-    } else if (exception instanceof Error) {
-      // Fallback for non-HttpExceptions (e.g., standard JS errors)
-      // In production, we might want to log this and not expose the stack/message details directly
-      // But for development/this specific request, generic message is handled above.
-      console.error('Unhandled Exception:', exception);
+    } else {
+       // Log non-HttpExceptions for debugging
+       console.error('Unhandled Exception:', exception);
     }
 
-    // Map common status codes to Spanish messages if the message is roughly the default
-    switch (status) {
+    // Map common status codes to Spanish messages
+    switch (httpStatus) {
       case HttpStatus.UNAUTHORIZED:
-        if (message === 'Unauthorized') message = 'No autorizado';
+        if (message === 'Unauthorized' || message === 'Error interno del servidor') message = 'No autorizado';
         break;
       case HttpStatus.FORBIDDEN:
         if (message === 'Forbidden') message = 'Acceso denegado';
@@ -56,12 +65,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
         break;
     }
 
-    const errorResponse: ApiResponse<any> = {
-      status: 'error',
-      message: message,
-      data: data,
+    const errorResponse: ErrorReponse = {
+      status: httpStatus >= 500 ? 'error' : 'fail',
+      message,
+      timestamp: new Date().toISOString(),
+      path: httpAdapter.getRequestUrl(ctx.getRequest()) as string,
     };
 
-    response.status(status).json(errorResponse);
+    if (errors) {
+      errorResponse.errors = errors;
+    }
+
+    httpAdapter.reply(ctx.getResponse(), errorResponse, httpStatus);
   }
 }
+

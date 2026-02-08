@@ -24,6 +24,12 @@ export class GroupRole {
   @Column({ default: false })
   isDefault: boolean;
 
+  @Column({ type: 'int', default: 10 })
+  level: number;
+
+  @Column({ default: false })
+  isSystem: boolean;
+
   @ManyToOne(() => Group, (group) => group.roles, {
     onDelete: 'CASCADE',
   })

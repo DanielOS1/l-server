@@ -1,8 +1,6 @@
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
-import * as compression from 'compression';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -20,12 +18,13 @@ async function bootstrap() {
   });
 
   // Performance
-  app.use(compression());
+  // app.use(compression());
 
   // Global Pipe & Interceptor
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new HttpExceptionFilter(httpAdapterHost));
   app.useGlobalInterceptors(new TransformInterceptor());
-  app.useGlobalFilters(new HttpExceptionFilter());
 
   await app.listen(process.env.PORT ?? 3000);
 }

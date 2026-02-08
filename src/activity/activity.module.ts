@@ -8,9 +8,11 @@ import { AssignmentModule } from 'src/assignment/assignment.module';
 
 import { Semester } from 'src/group/semester/entities/semester.entity';
 
+import { ActivityPosition } from './entities/activity-position.entity';
+
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Activity, Semester]),
+    TypeOrmModule.forFeature([Activity, Semester, ActivityPosition]),
     forwardRef(() => SemesterModule),
     forwardRef(() => AssignmentModule),
   ],

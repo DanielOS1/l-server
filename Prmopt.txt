@@ -1,0 +1,19 @@
+El sistema requiere una mejora en el modelo de autorización a nivel de grupos para permitir una gestión clara, segura y escalable de los permisos sin caer en una sobreingeniería. Actualmente, los usuarios pertenecen a un grupo mediante la entidad UserGroup, y dentro de este contexto se les asigna un GroupRole. Sin embargo, se necesita introducir una jerarquía simple que permita diferenciar entre usuarios con capacidad administrativa y usuarios con acceso únicamente de visualización.
+
+La propuesta es evitar el uso de propiedades booleanas como isDirective o isAdmin, ya que estas soluciones son poco escalables y tienden a romperse cuando el sistema evoluciona (por ejemplo, al necesitar roles intermedios o nuevas capacidades). En su lugar, se recomienda implementar un modelo de jerarquía basado en niveles (level) dentro de la entidad GroupRole. Este enfoque permite comparar roles de forma numérica y establecer reglas claras de autorización sin necesidad de un sistema complejo de permisos granulares.
+
+Cada rol de grupo deberá tener un atributo level que represente su autoridad dentro de la organización. Por ejemplo:
+
+OWNER (nivel 100): Control total del grupo. Puede crear y eliminar roles, gestionar miembros, configurar semestres, administrar metas financieras y transferir la propiedad del grupo. Este rol debe ser considerado un rol del sistema dentro del grupo, lo que implica que no puede ser eliminado ni degradado accidentalmente. Además, el sistema debe garantizar que siempre exista al menos un Owner para evitar que el grupo quede sin administración.
+
+ADMIN (nivel 50): Usuarios con permisos de gestión operativa. Pueden invitar miembros, configurar periodos (semestres o trimestres), crear actividades, gestionar ventas y administrar la mayoría de las configuraciones del grupo. Sin embargo, no deben poder modificar ni crear roles con un nivel superior al suyo.
+
+MEMBER (nivel 10): Usuarios estándar. Su acceso se limita principalmente a la visualización de información y a la participación operativa (por ejemplo, ser asignados a actividades), sin permisos estructurales sobre el grupo.
+
+Este modelo permite implementar validaciones extremadamente simples y robustas, como verificar que un usuario solo pueda crear o modificar roles con un nivel inferior al suyo, evitando así problemas de escalación de privilegios. Asimismo, facilita la construcción de guards o middlewares de autorización mediante comparaciones directas (por ejemplo, verificar si role.level >= ADMIN) en lugar de depender de múltiples flags o permisos individuales.
+
+Adicionalmente, se recomienda que ciertos roles base del grupo (Owner, Admin, Member) sean marcados como roles de sistema mediante una propiedad opcional como isSystem. Esto evitará que sean eliminados o alterados por error, manteniendo la integridad del modelo de seguridad del grupo.
+
+Es importante destacar que esta jerarquía aplica exclusivamente a los permisos administrativos del grupo y no debe mezclarse con la entidad Position (cargos operativos dentro de actividades o semestres). Los GroupRole definen qué puede hacer un usuario dentro de la plataforma, mientras que las Position describen qué responsabilidad tiene un usuario en el contexto de una actividad real. Mantener esta separación conceptual es clave para la claridad del dominio y la mantenibilidad del sistema.
+
+En conclusión, el uso de niveles jerárquicos para los roles de grupo proporciona un equilibrio ideal entre simplicidad y escalabilidad. Permite construir un sistema de autorización sólido sin introducir la complejidad de un RBAC granular, reduce el riesgo de errores críticos de seguridad y deja preparada la arquitectura para futuras extensiones sin necesidad de refactorizaciones profundas.
