@@ -1,96 +1,101 @@
 # Documentación del Proyecto L-APP (Backend)
 
 ## Introducción
-Este documento proporciona una visión general del estado actual del backend del proyecto L-APP, explicando su lógica de negocio, arquitectura modular y estructura de base de datos. El proyecto está construido utilizando **NestJS**, un framework de Node.js, y utiliza **TypeORM** para la interacción con una base de datos **PostgreSQL**.
+
+Este documento detalla la estructura, lógica de negocio y estado actual del backend del proyecto **L-APP**. El sistema está construido sobre **NestJS** (Node.js) y utiliza **PostgreSQL** con **TypeORM** para la persistencia de datos. Su objetivo principal es la gestión de organizaciones (grupos), miembros, actividades académicas o de voluntariado, y el control de finanzas básicas.
 
 ## Estado del Proyecto
-El proyecto se encuentra en una etapa de desarrollo funcional. La estructura base está implementada siguiendo buenas prácticas de arquitectura modular.
-- **Framework**: NestJS (Modular, TypeScript).
-- **ORM**: TypeORM.
-- **Base de Datos**: PostgreSQL.
-- **Autenticación**: JWT (Passport).
 
-## Lógica de Negocio
-El sistema parece estar diseñado para la **gestión académica o de voluntariado**, permitiendo la administración de usuarios, grupos y la asignación de personas a actividades específicas bajo ciertos roles o cargos.
+El proyecto cuenta con una arquitectura modular sólida y funcional.
 
-El flujo principal gira en torno a:
-1.  **Usuarios y Grupos**: Los usuarios se registran y se organizan en grupos.
-2.  **Roles y Permisos**: Se definen roles con permisos específicos (sistema RBAC) que se asignan a los usuarios dentro de los grupos.
-3.  **Planificación Académica/Temporal**: Existen "Semestres" que agrupan actividades.
-4.  **Asignaciones (Assignments)**: Es el núcleo operativo. Un usuario es "asignado" a una "Actividad" específica, ocupando un "Cargo" (Position) determinado.
-
-### Ejemplo de Uso
-Un usuario (Estudiante) pertenece a un grupo (Generación 2024). En el Semestre "Otoño 2024", se crea una Actividad "Feria de Ciencias". El usuario es asignado a esta actividad con el Cargo de "Coordinador Logístico".
-
-## Módulos del Sistema
-
-A continuación se describen los módulos principales identificados en `src/`:
-
-### 1. Auth (Autenticación)
-- **Función**: Maneja el registro y el inicio de sesión de los usuarios.
-- **Detalle**: Utiliza JWT (JSON Web Tokens) para asegurar los endpoints. Probablemente gestiona la validación de contraseñas y la emisión de tokens.
-
-### 2. User (Usuarios)
-- **Función**: Gestión de perfiles de usuario.
-- **Entidad Principal**: `User`.
-- **Datos**: Almacena RUT, nombre, correo, ocupación, teléfono, dirección, etc.
-- **Conexiones**: Se conecta con casi todos los demás módulos (Grupos, Roles, Asignaciones).
-
-### 3. Group (Grupos)
-- **Función**: Organización de usuarios en colectivos.
-- **Entidad Principal**: `Group`.
-- **Relación**: Un usuario pertenece a grupos a través de la entidad intermedia `UserGroup`.
-- **Roles en Grupo**: Mediante `UserGroupRole`, se pueden asignar roles específicos a un usuario dentro de un grupo (ej. un usuario puede ser "Líder" en un grupo y "Miembro" en otro).
-
-### 4. Role (Roles)
-- **Función**: Definición de perfiles de acceso y permisos.
-- **Entidad Principal**: `Role`.
-- **Detalles**: Permite definir roles globales o de sistema. Almacena permisos en formato JSON (`permissions`).
-- **Conexión**: Los roles son creados por usuarios y asignados a usuarios dentro de los grupos.
-
-### 5. Semester (Semestre)
-- **Función**: Unidad temporal para organizar actividades.
-- **Entidad Principal**: `Semester`.
-- **Uso**: Agrupa actividades y cargos disponibles para un periodo de tiempo.
-
-### 6. Activity (Actividades)
-- **Función**: Eventos o tareas específicas.
-- **Entidad Principal**: `Activity`.
-- **Datos**: Nombre, fecha, ubicación.
-- **Conexión**: Pertenece a un `Semester`.
-
-### 7. Position (Cargos)
-- **Función**: Definición de puestos o responsabilidades.
-- **Entidad Principal**: `Position`.
-- **Datos**: Nombre del cargo, descripción.
-- **Conexión**: Asociado a un `Semester`.
-
-### 8. Assignment (Asignaciones)
-- **Función**: Vinculación operativa.
-- **Entidad Principal**: `Assignment`.
-- **Lógica**: Une a un **Usuario** + **Actividad** + **Cargo**.
-- **Ejemplo**: Usuario X es [Voluntario] en la [Actividad Y].
-
-## Base de Datos (Mapeo Relacional)
-
-La base de datos maneja las siguientes relaciones clave:
-
-- **Users** ↔ **Groups** (Muchos a Muchos): Implementado a través de `user_groups`.
-- **Users** ↔ **Roles**: A través de `user_group_roles` (permitiendo roles contextuales por grupo).
-- **Semesters** ↔ **Activities**: Un semestre tiene muchas actividades (1:N).
-- **Semesters** ↔ **Positions**: Un semestre tiene muchos cargos definidos (1:N).
-- **Assignments**: Tabla pivote central que conecta `User`, `Activity` y `Position`.
-
-### Tablas Principales (Identificadas)
-- `user`
-- `roles`
-- `groups`
-- `user_groups`
-- `user_group_roles`
-- `semesters` (inferida)
-- `activities`
-- `positions`
-- `assignments`
+- **Tecnologías**: NestJS, TypeScript, TypeORM, PostgreSQL, Passport/JWT.
+- **Estructura**: Modular (Carpeta `src` dividida por dominios).
+- **Cobertura**: Autenticación, Gestión de Usuarios, Grupos, Roles (RBAC granular), Actividades, Asignaciones y Finanzas.
 
 ---
-*Generado automáticamente por Antigravity a partir del análisis del código fuente.*
+
+## Módulos y Lógica de Negocio
+
+### 1. Sistema de Roles y Permisos (Jerarquía)
+
+El sistema maneja permisos en tres niveles distintos, lo cual es vital para entender el flujo de autorización.
+
+#### A. Nivel Aplicación / Sistema (Global)
+
+- **Módulo**: `src/system/role`
+- **Entidad**: `Role`
+- **Descripción**: Define roles globales (ej. "Super Admin", "Usuario Sistema"). Contiene un campo `permissions` (JSON) para configurar capacidades técnicas finas.
+- **Estado Actual**: Aunque la entidad existe y se pueden definir roles, no se observa una asignación directa activa en la entidad `User` (la relación no está explícita en el código actual del usuario). Es probable que esté en desarrollo o se maneje implícitamente.
+
+#### B. Nivel Grupo (Organizacional)
+
+- **Módulo**: `src/group/group-role`
+- **Entidad**: `GroupRole`
+- **Descripción**: Este es el nivel **principal** de control de acceso operativo.
+- **Funcionamiento**:
+  - Un usuario pertenece a un `Group` a través de `UserGroup`.
+  - En esa relación, se le asigna un `GroupRole` (ej. "Líder de Grupo", "Miembro", "Tesorero").
+  - Este rol define qué puede hacer el usuario *dentro* de ese grupo específico (invitar gente, gestionar finanzas, crear semestres).
+
+#### C. Nivel Actividad / Operativo (Semestral)
+
+- **Módulo**: `src/position` y `src/assignment`
+- **Entidad**: `Position` (Cargo)
+- **Descripción**: Define el "trabajo" o "puesto" que ocupa una persona en una actividad específica.
+- **Diferencia Clave**: A diferencia de los Roles de Grupo, los **Cargos (Positions)** son típicamente descriptivos y funcionales (ej. "Logística", "Staff", "Coordinador de Evento") y están vinculados a una `Assignment`. No necesariamente otorgan permisos administrativos en la plataforma, sino responsabilidades en el evento real.
+
+---
+
+### 2. Descripción de Módulos
+
+#### Core
+
+- **Auth**: Manejo de autenticación vía JWT. Registro e inicio de sesión estándar (Email/Password).
+- **User**: Gestión de identidad. Almacena RUT, datos de contacto y perfil.
+- **Config**: Gestión de variables de entorno y configuración de DB.
+
+#### Organización (Group Module)
+
+- **Group**: La unidad central. Puede representar una generación, un curso, o un equipo de voluntariado.
+- **Semester**: Unidad temporal dentro de un Grupo (ej. "Semestre Otoño 2024"). Permite organizar las actividades por periodos.
+- **UserGroup**: Tabla pivote que vincula usuarios a grupos y les otorga su `GroupRole`.
+
+#### Operaciones (Activity Module)
+
+- **Activity**: Eventos puntuales (reuniones, ferias, salidas) que ocurren dentro de un Semestre.
+- **Position**: Define los cargos disponibles para las actividades.
+- **Assignment**: El vínculo final operativa. Asigna a un `User` a una `Activity` específica ocupando una `Position`.
+
+#### Finanzas (Finance Module)
+
+- **Objetivo**: Gestión de metas económicas y ventas (probablemente para recaudación de fondos de los grupos).
+- **Componentes**:
+  - **Goal**: Metas financieras establecidas.
+  - **Sale**: Registro de ventas realizadas.
+  - **SaleColumn / SaleRow**: Estructura flexible para detallar ítems o categorías dentro de las ventas (posiblemente para planillas de control).
+
+---
+
+## Base de Datos (Relaciones Clave)
+
+El esquema relacional refleja la jerarquía mencionada:
+
+1. **Users** `1:N` **UserGroups** `N:1` **Groups**
+    *Relación fundamental de pertenencia.*
+2. **Groups** `1:N` **GroupRoles**
+    *Los roles se definen por grupo (o se heredan de plantillas).*
+3. **UserGroups** `N:1` **GroupRoles**
+    *Al unirse al grupo, el usuario recibe un rol específico.*
+4. **Groups** `1:N` **Semesters** `1:N` **Activities**
+    *Flujo temporal: Grupo -> Semestre -> Actividad.*
+5. **Activities** `1:N` **Assignments**
+    *Personal asignado a la actividad.*
+6. **Assignments** `N:1` **Users** y `N:1` **Positions**
+    *Quién hace qué.*
+
+## Conclusión
+
+El backend de L-APP está diseñado para ser multi-inquilino a nivel lógico (basado en Grupos). El sistema de permisos es robusto a nivel de Grupo (`GroupRole`), permitiendo que cada organización gestione sus propios miembros y reglas. La capa operativa (`Check-in/Assignments`) permite gestionar el voluntariado o trabajo académico detallado actividad por actividad.
+
+---
+*Documentación generada automáticamente por Antigravity tras análisis del código fuente (Febrero 2026).*

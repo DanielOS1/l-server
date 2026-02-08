@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { plainToInstance } from 'class-transformer';
@@ -9,6 +9,7 @@ import { UserGroup } from '../user-group/entities/user-group.entity';
 import { User } from '../../user/entities/user.entity';
 import { GroupResponseDto } from './dto/group-response.dto';
 import { GroupRole } from '../group-role/entities/group-role.entity';
+import { ROLE_LEVELS } from '../group-role/constants/role-levels.constant';
 
 @Injectable()
 export class GroupService {
@@ -32,6 +33,7 @@ export class GroupService {
         'userGroups.user',
         'userGroups.groupRole',
         'roles',
+        'semesters',
       ],
     });
 
@@ -96,11 +98,24 @@ export class GroupService {
     const group = await this.groupRepository.save(newGroup);
 
     // 3. Crear roles por defecto para este grupo
-    const adminRole = await this.groupRoleRepository.save(
+    const ownerRole = await this.groupRoleRepository.save(
       this.groupRoleRepository.create({
         name: 'OWNER',
-        description: 'Rol de administrador del grupo',
+        description: 'Propietario del grupo',
         isDefault: false,
+        level: ROLE_LEVELS.OWNER,
+        isSystem: true,
+        group,
+      }),
+    );
+
+    const adminRole = await this.groupRoleRepository.save(
+      this.groupRoleRepository.create({
+        name: 'ADMIN',
+        description: 'Administrador del grupo',
+        isDefault: false,
+        level: ROLE_LEVELS.ADMIN,
+        isSystem: true,
         group,
       }),
     );
@@ -108,8 +123,10 @@ export class GroupService {
     const memberRole = await this.groupRoleRepository.save(
       this.groupRoleRepository.create({
         name: 'MEMBER',
-        description: 'Rol básico de miembro',
+        description: 'Miembro del grupo',
         isDefault: true,
+        level: ROLE_LEVELS.MEMBER,
+        isSystem: true,
         group,
       }),
     );
@@ -120,7 +137,7 @@ export class GroupService {
         user,
         group,
         isCreator: true,
-        groupRole: adminRole,
+        groupRole: ownerRole,
       }),
     );
 
@@ -202,6 +219,35 @@ export class GroupService {
 
     if (!assignedByUser)
       throw new NotFoundException('Assigning user not found');
+
+    // Verificación de jerarquía
+    const requesterUserGroup = await this.userGroupRepository.findOne({
+        where: { group: { id: groupId }, user: { id: assignedByUserId } },
+        relations: ['groupRole'],
+    });
+
+    if (!requesterUserGroup) {
+        throw new ForbiddenException('Requester is not a member of this group');
+    }
+
+    if (requesterUserGroup.groupRole.level <= role.level) {
+        throw new ForbiddenException('Cannot assign a role with equal or higher authority than yours');
+    }
+
+    // Proteger al último Owner
+    if (userGroup.groupRole.level === ROLE_LEVELS.OWNER && role.level !== ROLE_LEVELS.OWNER) {
+      const ownerCount = await this.userGroupRepository.count({
+        where: {
+          group: { id: groupId },
+          groupRole: { level: ROLE_LEVELS.OWNER },
+        },
+      });
+      if (ownerCount <= 1) {
+        throw new ForbiddenException(
+          'Cannot remove the last owner from the group. Assign another owner first.',
+        );
+      }
+    }
 
     // Asignar nuevo rol
     userGroup.groupRole = role;

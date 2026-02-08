@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { Semester } from 'src/group/semester/entities/semester.entity';
 import { Assignment } from 'src/assignment/entities/assignment.entity';
+import { ActivityPosition } from './activity-position.entity';
 
 @Entity('activities')
 export class Activity {
@@ -30,4 +31,7 @@ export class Activity {
 
   @OneToMany(() => Assignment, (assignment) => assignment.activity)
   assignments: Assignment[];
+
+  @OneToMany(() => ActivityPosition, (ap) => ap.activity)
+  activityPositions: ActivityPosition[];
 }

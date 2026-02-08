@@ -20,8 +20,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    let message = 'Internal server error';
-    let errors: any[] | undefined;
+    let message = 'Error interno del servidor';
+    let errors: string[] | undefined;
 
     if (exception instanceof HttpException) {
       const exceptionResponse = exception.getResponse();
@@ -36,14 +36,35 @@ export class HttpExceptionFilter implements ExceptionFilter {
           message?: string | string[];
           error?: string;
         };
-        message =
-          (responseObj.message as string) || responseObj.error || message;
-
+        
+        // Handle class-validator array of errors
         if (Array.isArray(responseObj.message)) {
+          message = 'Error de validación';
           errors = responseObj.message;
+        } else if (typeof responseObj.message === 'string') {
+           message = responseObj.message;
+        } else if (responseObj.error) {
+           message = responseObj.error;
         }
       }
+    } else {
+       // Log non-HttpExceptions for debugging
+       console.error('Unhandled Exception:', exception);
     }
+
+    // Map common status codes to Spanish messages
+    switch (httpStatus) {
+      case HttpStatus.UNAUTHORIZED:
+        if (message === 'Unauthorized' || message === 'Error interno del servidor') message = 'No autorizado';
+        break;
+      case HttpStatus.FORBIDDEN:
+        if (message === 'Forbidden') message = 'Acceso denegado';
+        break;
+      case HttpStatus.NOT_FOUND:
+        if (message === 'Not Found') message = 'Recurso no encontrado';
+        break;
+    }
+
     const errorResponse: ErrorReponse = {
       status: httpStatus >= 500 ? 'error' : 'fail',
       message,
@@ -58,3 +79,4 @@ export class HttpExceptionFilter implements ExceptionFilter {
     httpAdapter.reply(ctx.getResponse(), errorResponse, httpStatus);
   }
 }
+

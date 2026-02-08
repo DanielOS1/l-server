@@ -17,7 +17,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepository.findOne({ where: { email } });
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       const { password, ...result } = user;
       return result;
     }
@@ -32,11 +32,22 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto): Promise<User> {
-    const existing = await this.userRepository.findOne({ where: { email: createUserDto.email } });
-    if (existing) throw new BadRequestException('Email already in use');
-    
+    const existingEmail = await this.userRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+    if (existingEmail)
+      throw new BadRequestException('El correo electrónico ya está en uso');
+
+    const existingRut = await this.userRepository.findOne({
+      where: { rut: createUserDto.rut },
+    });
+    if (existingRut) throw new BadRequestException('El RUT ya está registrado');
+
     const hash = await bcrypt.hash(createUserDto.password, 10);
-    const newUser = this.userRepository.create({ ...createUserDto, password: hash });
+    const newUser = this.userRepository.create({
+      ...createUserDto,
+      password: hash,
+    });
     return this.userRepository.save(newUser);
   }
 }

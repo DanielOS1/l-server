@@ -54,4 +54,8 @@ export class GroupResponseDto {
   @ValidateNested({ each: true })
   @Type(() => UserGroupDto)
   userGroups: UserGroupDto[];
+
+  @IsOptional()
+  @IsArray()
+  semesters: any[];
 }

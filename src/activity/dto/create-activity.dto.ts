@@ -5,7 +5,22 @@ import {
   MaxLength,
   IsISO8601,
   IsOptional,
+  IsInt,
+  Min,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class CreateActivityPositionDto {
+  @IsUUID()
+  @IsNotEmpty()
+  positionId: string;
+
+  @IsInt()
+  @Min(1)
+  quantity: number;
+}
 
 export class CreateActivityDto {
   @IsString()
@@ -29,4 +44,10 @@ export class CreateActivityDto {
   @IsUUID()
   @IsNotEmpty()
   semesterId: string;
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => CreateActivityPositionDto)
+  activityPositions?: CreateActivityPositionDto[];
 }
