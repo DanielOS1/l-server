@@ -7,10 +7,10 @@ export class UserDto {
     id: string;
   
     @IsString()
-    nombre: string;
+    firstName: string;
   
     @IsString()
-    apellido: string;
+    lastName: string;
   
     @IsEmail()
     email: string;
@@ -20,8 +20,9 @@ export class UserGroupDto {
   @IsUUID()
   id: string;
 
-  @IsString()
-  role: string;
+  @IsOptional()
+  @ValidateNested()
+  groupRole: any; // Using any to avoid complex circular imports, or define a GroupRoleDto here if needed
 
   @IsBoolean()
   isCreator: boolean;
