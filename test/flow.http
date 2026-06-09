@@ -1,0 +1,625 @@
+# =============================================================
+# FLUJO COMPLETO - Módulos 1-6
+# VS Code REST Client (extensión: humao.rest-client)
+#
+# INSTRUCCIONES:
+#   Ejecuta los requests EN ORDEN de arriba a abajo.
+#   No necesitas copiar ni pegar nada — las variables se
+#   encadenan automáticamente entre requests.
+#
+# NOTA: Todas las respuestas tienen la forma:
+#   { "status": "success", "data": <T>, ... }
+#   Por eso las referencias usan .response.body.data.<campo>
+# =============================================================
+
+@baseUrl = http://localhost:3000
+
+
+# =============================================================
+# BLOQUE 1 — AUTH
+# =============================================================
+
+### 1.1 Registrar Owner
+# @name registerOwner
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Daniel",
+  "lastName": "Olivares",
+  "rut": "12345678-9",
+  "email": "owner@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 1.2 Registrar Admin
+# @name registerAdmin
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "María",
+  "lastName": "González",
+  "rut": "9876543-2",
+  "email": "admin@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 1.3 Registrar Member
+# @name registerMember
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Pedro",
+  "lastName": "Soto",
+  "rut": "11111111-1",
+  "email": "member@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 1.4 Login Owner
+# @name loginOwner
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "owner@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 1.5 Login Admin
+# @name loginAdmin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 1.6 Login Member
+# @name loginMember
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "member@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 1.7 [ERROR] Login con contraseña incorrecta → 401
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "owner@test.com",
+  "password": "wrongPassword"
+}
+
+###
+
+### 1.8 [ERROR] Acceder endpoint sin token → 401
+GET {{baseUrl}}/groups
+
+###
+
+
+# =============================================================
+# BLOQUE 2 — GROUP
+# =============================================================
+
+### 2.1 Crear grupo (Owner)
+# @name createGroup
+POST {{baseUrl}}/groups
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Centro de Estudiantes Ingeniería",
+  "description": "Organización estudiantil de la carrera"
+}
+
+###
+
+### 2.2 GET todos los grupos
+GET {{baseUrl}}/groups
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 2.3 GET grupo por ID
+GET {{baseUrl}}/groups/{{createGroup.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 2.4 GET grupos del Owner
+GET {{baseUrl}}/groups/user/{{registerOwner.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 2.5 Agregar Admin al grupo
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/add-member
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerAdmin.response.body.data.id}}"
+}
+
+###
+
+### 2.6 Agregar Member al grupo
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/add-member
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerMember.response.body.data.id}}"
+}
+
+###
+
+### 2.7 [ERROR] Agregar usuario ya miembro → 400
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/add-member
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerAdmin.response.body.data.id}}"
+}
+
+###
+
+### 2.8 GET roles del grupo
+# Ordenados por nivel DESC: índice 0=OWNER(100), 1=ADMIN(50), 2=MEMBER(10)
+# @name getRoles
+GET {{baseUrl}}/group-roles?groupId={{createGroup.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 2.9 Promover Admin a rol ADMIN (índice 1 del array de roles)
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/assign-role
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerAdmin.response.body.data.id}}",
+  "roleId": "{{getRoles.response.body.data.1.id}}"
+}
+
+###
+
+### 2.10 [ERROR] Admin intenta asignar rol OWNER → 403
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/assign-role
+Authorization: Bearer {{loginAdmin.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerMember.response.body.data.id}}",
+  "roleId": "{{getRoles.response.body.data.0.id}}"
+}
+
+###
+
+### 2.11 [ERROR] Admin intenta degradar al Owner → 403
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/assign-role
+Authorization: Bearer {{loginAdmin.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerOwner.response.body.data.id}}",
+  "roleId": "{{getRoles.response.body.data.2.id}}"
+}
+
+###
+
+### 2.12 Remover Member del grupo
+DELETE {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/members/{{registerMember.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 2.13 Re-agregar Member al grupo
+POST {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/add-member
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "userId": "{{registerMember.response.body.data.id}}"
+}
+
+###
+
+### 2.14 [ERROR] Member intenta remover a Admin (jerarquía inferior) → 403
+DELETE {{baseUrl}}/groups/{{createGroup.response.body.data.id}}/members/{{registerAdmin.response.body.data.id}}
+Authorization: Bearer {{loginMember.response.body.data.access_token}}
+
+###
+
+
+# =============================================================
+# BLOQUE 3 — SEMESTER
+# =============================================================
+
+### 3.1 Crear semestre
+# @name createSemester
+POST {{baseUrl}}/semester
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Primer Semestre 2026",
+  "startDate": "2026-03-01",
+  "endDate": "2026-07-31",
+  "groupId": "{{createGroup.response.body.data.id}}"
+}
+
+###
+
+### 3.2 GET semestres del grupo
+GET {{baseUrl}}/semester?groupId={{createGroup.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 3.3 GET semestre por ID
+GET {{baseUrl}}/semester/{{createSemester.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 3.4 PUT actualizar nombre del semestre
+PUT {{baseUrl}}/semester/{{createSemester.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "1er Semestre 2026"
+}
+
+###
+
+### 3.5 [ERROR] Crear semestre con fechas invertidas → 400
+POST {{baseUrl}}/semester
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Semestre inválido",
+  "startDate": "2026-07-31",
+  "endDate": "2026-03-01",
+  "groupId": "{{createGroup.response.body.data.id}}"
+}
+
+###
+
+
+# =============================================================
+# BLOQUE 4 — POSITION
+# =============================================================
+
+### 4.1 Crear posición Maestro de Ceremonias
+# @name createPosMC
+POST {{baseUrl}}/position
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Maestro de Ceremonias",
+  "description": "Conduce el evento",
+  "semesterId": "{{createSemester.response.body.data.id}}"
+}
+
+###
+
+### 4.2 Crear posición Logística
+# @name createPosLog
+POST {{baseUrl}}/position
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Logística",
+  "description": "Organización y montaje del evento",
+  "semesterId": "{{createSemester.response.body.data.id}}"
+}
+
+###
+
+### 4.3 Crear posición Ventas
+# @name createPosVen
+POST {{baseUrl}}/position
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Ventas",
+  "description": "Venta de productos durante el evento",
+  "semesterId": "{{createSemester.response.body.data.id}}"
+}
+
+###
+
+### 4.4 GET posiciones del semestre
+GET {{baseUrl}}/position?semesterId={{createSemester.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 4.5 PUT actualizar descripción de posición
+PUT {{baseUrl}}/position/{{createPosMC.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "description": "Conduce y anima el evento principal"
+}
+
+###
+
+
+# =============================================================
+# BLOQUE 5 — ACTIVITY
+# =============================================================
+
+### 5.1 Crear actividad con cupos (MC:1, Logística:2, Ventas:1)
+# @name createActivity
+POST {{baseUrl}}/activity
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Bingo Solidario",
+  "date": "2026-04-20T18:00:00",
+  "location": "Aula Magna",
+  "description": "Evento de recaudación de fondos",
+  "semesterId": "{{createSemester.response.body.data.id}}",
+  "activityPositions": [
+    { "positionId": "{{createPosMC.response.body.data.id}}", "quantity": 1 },
+    { "positionId": "{{createPosLog.response.body.data.id}}", "quantity": 2 },
+    { "positionId": "{{createPosVen.response.body.data.id}}", "quantity": 1 }
+  ]
+}
+
+###
+
+### 5.2 GET actividades del semestre
+GET {{baseUrl}}/activity?semesterId={{createSemester.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 5.3 GET actividad por ID (ver activityPositions y assignments)
+GET {{baseUrl}}/activity/{{createActivity.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 5.4 PUT actualizar actividad
+PUT {{baseUrl}}/activity/{{createActivity.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "description": "Gran Bingo Solidario - entrada liberada",
+  "activityPositions": [
+    { "positionId": "{{createPosMC.response.body.data.id}}", "quantity": 1 },
+    { "positionId": "{{createPosLog.response.body.data.id}}", "quantity": 2 },
+    { "positionId": "{{createPosVen.response.body.data.id}}", "quantity": 1 }
+  ]
+}
+
+###
+
+### 5.5 [ERROR] Actividad fuera del rango del semestre → 400
+POST {{baseUrl}}/activity
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "name": "Evento Fuera de Rango",
+  "date": "2025-01-15T10:00:00",
+  "location": "Sala A",
+  "semesterId": "{{createSemester.response.body.data.id}}",
+  "activityPositions": []
+}
+
+###
+
+
+# =============================================================
+# BLOQUE 6 — ASSIGNMENT
+# =============================================================
+
+### 6.1 Asignar Owner → Maestro de Ceremonias (cupo: 1)
+# @name createAssign1
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosMC.response.body.data.id}}",
+  "userId": "{{registerOwner.response.body.data.id}}",
+  "notes": "Presentador principal"
+}
+
+###
+
+### 6.2 Asignar Admin → Logística (cupo: 1/2)
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosLog.response.body.data.id}}",
+  "userId": "{{registerAdmin.response.body.data.id}}"
+}
+
+###
+
+### 6.3 Asignar Member → Logística (cupo: 2/2 — llena el cupo)
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosLog.response.body.data.id}}",
+  "userId": "{{registerMember.response.body.data.id}}"
+}
+
+###
+
+### 6.4 [ERROR] Duplicado: Owner a MC de nuevo → 400
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosMC.response.body.data.id}}",
+  "userId": "{{registerOwner.response.body.data.id}}"
+}
+
+###
+
+### 6.5 [ERROR] Capacidad llena: un tercero a Logística (máx 2) → 400
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosLog.response.body.data.id}}",
+  "userId": "{{registerOwner.response.body.data.id}}"
+}
+
+###
+
+### 6.6 Registrar usuario externo (sin agregarlo al grupo)
+# @name registerExterno
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "Externo",
+  "lastName": "Test",
+  "rut": "22222222-2",
+  "email": "externo@test.com",
+  "password": "Password123!"
+}
+
+###
+
+### 6.7 [ERROR] Asignar usuario externo al grupo → 403
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosVen.response.body.data.id}}",
+  "userId": "{{registerExterno.response.body.data.id}}"
+}
+
+###
+
+### 6.8 GET assignments por activityId
+GET {{baseUrl}}/assignment?activityId={{createActivity.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 6.9 GET assignments por userId (mis actividades)
+GET {{baseUrl}}/assignment?userId={{registerOwner.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 6.10 GET assignment por ID
+GET {{baseUrl}}/assignment/{{createAssign1.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 6.11 PUT actualizar notas del assignment
+PUT {{baseUrl}}/assignment/{{createAssign1.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "notes": "MC principal - llegada 1 hora antes"
+}
+
+###
+
+### 6.12 DELETE assignment (liberar cupo de MC)
+DELETE {{baseUrl}}/assignment/{{createAssign1.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 6.13 Verificar cupo liberado: re-asignar Member a MC
+POST {{baseUrl}}/assignment
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+Content-Type: application/json
+
+{
+  "activityId": "{{createActivity.response.body.data.id}}",
+  "positionId": "{{createPosMC.response.body.data.id}}",
+  "userId": "{{registerMember.response.body.data.id}}"
+}
+
+###
+
+### 6.14 GET actividad para confirmar estado final de assignments
+GET {{baseUrl}}/activity/{{createActivity.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+
+# =============================================================
+# BLOQUE 7 — LIMPIEZA
+# =============================================================
+
+### 7.1 DELETE actividad (cascade elimina sus assignments)
+DELETE {{baseUrl}}/activity/{{createActivity.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 7.2 Verificar que assignments fueron eliminados → []
+GET {{baseUrl}}/assignment?activityId={{createActivity.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 7.3 DELETE semestre
+DELETE {{baseUrl}}/semester/{{createSemester.response.body.data.id}}
+Authorization: Bearer {{loginOwner.response.body.data.access_token}}
+
+###
+
+### 7.4 [ERROR] Sin token → 401
+GET {{baseUrl}}/activity?semesterId={{createSemester.response.body.data.id}}
+
+###

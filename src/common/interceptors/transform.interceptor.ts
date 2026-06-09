@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { instanceToPlain } from 'class-transformer';
 import { SuccessResponse } from '../interfaces/api-response.interface';
 
 @Injectable()
@@ -21,8 +22,7 @@ export class TransformInterceptor<T> implements NestInterceptor<
       map((data) => ({
         status: 'success' as const,
         message: 'Operation successful',
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        data,
+        data: instanceToPlain(data, { excludeExtraneousValues: false }) as T,
         timestamp: new Date().toISOString(),
       })),
     );

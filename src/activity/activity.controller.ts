@@ -8,13 +8,16 @@ import {
   Delete,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ActivityService } from './activity.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { Activity } from './entities/activity.entity';
 
 @Controller('activity')
+@UseGuards(AuthGuard('jwt'))
 export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 

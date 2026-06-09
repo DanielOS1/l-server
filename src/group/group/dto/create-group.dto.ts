@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateGroupDto {
   @IsString()
@@ -7,10 +7,7 @@ export class CreateGroupDto {
   name: string;
 
   @IsString()
+  @IsOptional()
   @MaxLength(255)
-  description: string;
-
-  @IsUUID()
-  @IsNotEmpty()
-  createdById: string;
+  description?: string;
 }

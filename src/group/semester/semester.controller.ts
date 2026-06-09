@@ -8,13 +8,16 @@ import {
   Delete,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { SemesterService } from './semester.service';
 import { CreateSemesterDto } from './dto/create-semester.dto';
 import { Semester } from './entities/semester.entity';
 import { UpdateSemesterDto } from './dto/update-semester.dto';
 
 @Controller('semester')
+@UseGuards(AuthGuard('jwt'))
 export class SemesterController {
   // Controller methods will be implemented here
   constructor(private readonly semesterService: SemesterService) {}

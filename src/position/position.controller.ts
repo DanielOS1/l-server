@@ -8,13 +8,16 @@ import {
   Delete,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { PositionService } from './position.service';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
 import { Position } from './entities/position.entity';
 
 @Controller('position')
+@UseGuards(AuthGuard('jwt'))
 export class PositionController {
   constructor(private readonly positionService: PositionService) {}
 

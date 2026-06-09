@@ -8,29 +8,36 @@ import {
   Delete,
   Query,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AssignmentService } from './assignment.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { Assignment } from './entities/assignment.entity';
 
 @Controller('assignment')
+@UseGuards(AuthGuard('jwt'))
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
 
   @Post()
-  create(
-    @Body() createAssignmentDto: CreateAssignmentDto,
-  ): Promise<Assignment> {
+  create(@Body() createAssignmentDto: CreateAssignmentDto): Promise<Assignment> {
     return this.assignmentService.create(createAssignmentDto);
   }
 
   @Get()
-  findAll(@Query('activityId') activityId: string): Promise<Assignment[]> {
-    if (!activityId) {
-      throw new BadRequestException('activityId is required');
+  findAll(
+    @Query('activityId') activityId: string,
+    @Query('userId') userId: string,
+  ): Promise<Assignment[]> {
+    if (activityId) {
+      return this.assignmentService.findAllByActivity(activityId);
     }
-    return this.assignmentService.findAllByActivity(activityId);
+    if (userId) {
+      return this.assignmentService.findAllByUser(userId);
+    }
+    throw new BadRequestException('Se requiere activityId o userId como parámetro');
   }
 
   @Get(':id')
