@@ -17,6 +17,7 @@ import { GoalModule } from './finance/goal/goal.module';
 import { SaleModule } from './finance/sale/sale.module';
 import { SaleColumnModule } from './finance/sale-column/sale-column.module';
 import { SaleRowModule } from './finance/sale-row/sale-row.module';
+import { NoticesModule } from './notices/notices.module';
 
 import { getDatabaseConfig } from './config/database.config';
 
@@ -45,6 +46,7 @@ import { getDatabaseConfig } from './config/database.config';
     SaleModule,
     SaleColumnModule,
     SaleRowModule,
+    NoticesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
