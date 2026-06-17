@@ -1,5 +1,8 @@
 export const ROLE_LEVELS = {
+  FOUNDER: 101,
   OWNER: 100,
+  MANAGER: 75,
   ADMIN: 50,
+  NOTICES: 30,
   MEMBER: 10,
 };

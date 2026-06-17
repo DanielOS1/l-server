@@ -4,12 +4,15 @@ import {
   IsOptional,
   IsBoolean,
   IsUUID,
+  IsNumber,
+  Min,
+  Max,
 } from 'class-validator';
 
 export class CreateGroupRoleDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  name!: string;
 
   @IsString()
   @IsOptional()
@@ -21,5 +24,11 @@ export class CreateGroupRoleDto {
 
   @IsUUID()
   @IsNotEmpty()
-  groupId: string;
+  groupId!: string;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(100)
+  level?: number;
 }
