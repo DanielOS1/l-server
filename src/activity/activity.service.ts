@@ -11,6 +11,7 @@ import { UpdateActivityDto } from './dto/update-activity.dto';
 import { Semester } from '../group/semester/entities/semester.entity';
 import { ActivityPosition } from './entities/activity-position.entity';
 import { Position } from '../position/entities/position.entity';
+import { GroupAccessService } from '../common/group-access/group-access.service';
 
 @Injectable()
 export class ActivityService {
@@ -21,17 +22,23 @@ export class ActivityService {
     private readonly semesterRepository: Repository<Semester>,
     @InjectRepository(ActivityPosition)
     private readonly activityPositionRepository: Repository<ActivityPosition>,
+    private readonly groupAccessService: GroupAccessService,
   ) {}
 
-  async create(createActivityDto: CreateActivityDto): Promise<Activity> {
+  async create(
+    createActivityDto: CreateActivityDto,
+    userId: string,
+  ): Promise<Activity> {
     const { semesterId, date, activityPositions } = createActivityDto;
 
     const semester = await this.semesterRepository.findOne({
       where: { id: semesterId },
+      relations: ['group'],
     });
     if (!semester) {
       throw new NotFoundException('Semester not found');
     }
+    await this.groupAccessService.assertMember(userId, semester.group.id);
 
     const activityDate = new Date(date);
     if (
@@ -64,7 +71,19 @@ export class ActivityService {
     return savedActivity;
   }
 
-  async findAllBySemester(semesterId: string): Promise<Activity[]> {
+  async findAllBySemester(
+    semesterId: string,
+    userId: string,
+  ): Promise<Activity[]> {
+    const semester = await this.semesterRepository.findOne({
+      where: { id: semesterId },
+      relations: ['group'],
+    });
+    if (!semester) {
+      throw new NotFoundException('Semester not found');
+    }
+    await this.groupAccessService.assertMember(userId, semester.group.id);
+
     return this.activityRepository.find({
       where: { semester: { id: semesterId } },
       relations: ['activityPositions', 'activityPositions.position'],
@@ -72,11 +91,12 @@ export class ActivityService {
     });
   }
 
-  async findOne(id: string): Promise<Activity> {
+  async findOne(id: string, userId: string): Promise<Activity> {
     const activity = await this.activityRepository.findOne({
       where: { id },
       relations: [
         'semester',
+        'semester.group',
         'activityPositions',
         'activityPositions.position',
         'assignments',
@@ -87,14 +107,19 @@ export class ActivityService {
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
+    await this.groupAccessService.assertMember(
+      userId,
+      activity.semester.group.id,
+    );
     return activity;
   }
 
   async update(
     id: string,
     updateActivityDto: UpdateActivityDto,
+    userId: string,
   ): Promise<Activity> {
-    const activity = await this.findOne(id);
+    const activity = await this.findOne(id, userId);
 
     if (updateActivityDto.date) {
       const semester = activity.semester; // Loaded in findOne
@@ -128,11 +153,11 @@ export class ActivityService {
       updatedActivity.activityPositions = positionsToSave;
     }
 
-    return this.findOne(id); // Return full object with relations
+    return this.findOne(id, userId); // Return full object with relations
   }
 
-  async remove(id: string): Promise<void> {
-    const activity = await this.findOne(id);
+  async remove(id: string, userId: string): Promise<void> {
+    const activity = await this.findOne(id, userId);
     await this.activityRepository.remove(activity);
   }
 }

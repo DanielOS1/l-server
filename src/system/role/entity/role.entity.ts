@@ -4,10 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
-  OneToMany,
 } from 'typeorm';
-import { User } from '../../../user/entities/user.entity';
 import { IPermissions } from '../../../types/types';
 
 @Entity('roles')

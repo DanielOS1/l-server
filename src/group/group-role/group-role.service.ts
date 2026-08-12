@@ -43,7 +43,10 @@ export class GroupRoleService {
       throw new ForbiddenException('You are not a member of this group');
     }
 
-    if (!userGroup.groupRole || userGroup.groupRole.level < ROLE_LEVELS.MANAGER) {
+    if (
+      !userGroup.groupRole ||
+      userGroup.groupRole.level < ROLE_LEVELS.MANAGER
+    ) {
       throw new ForbiddenException(
         'You need Manager level or higher to manage roles',
       );
@@ -67,7 +70,9 @@ export class GroupRoleService {
     const newRoleLevel = roleData.level ?? ROLE_LEVELS.MEMBER;
 
     if (newRoleLevel > ROLE_LEVELS.OWNER) {
-      throw new BadRequestException('El nivel máximo asignable para un rol es 100');
+      throw new BadRequestException(
+        'El nivel máximo asignable para un rol es 100',
+      );
     }
 
     await this.validateRoleManagement(userId, groupId, newRoleLevel);
@@ -143,17 +148,27 @@ export class GroupRoleService {
     }
 
     // Check authority over the current level
-    await this.validateRoleManagement(userId, groupRole.group.id, groupRole.level);
+    await this.validateRoleManagement(
+      userId,
+      groupRole.group.id,
+      groupRole.level,
+    );
 
     // If changing level, also check authority over the new level
     if (updateGroupRoleDto.level !== undefined) {
       if (updateGroupRoleDto.level > ROLE_LEVELS.OWNER) {
-        throw new BadRequestException('El nivel máximo asignable para un rol es 100');
+        throw new BadRequestException(
+          'El nivel máximo asignable para un rol es 100',
+        );
       }
-      await this.validateRoleManagement(userId, groupRole.group.id, updateGroupRoleDto.level);
+      await this.validateRoleManagement(
+        userId,
+        groupRole.group.id,
+        updateGroupRoleDto.level,
+      );
     }
 
-    const { groupId: _ignored, ...updateData } = updateGroupRoleDto as any;
+    const { groupId: _groupId, ...updateData } = updateGroupRoleDto;
     Object.assign(groupRole, updateData);
 
     return this.groupRoleRepository.save(groupRole);
@@ -173,7 +188,11 @@ export class GroupRoleService {
       throw new BadRequestException('Cannot delete system roles');
     }
 
-    await this.validateRoleManagement(userId, groupRole.group.id, groupRole.level);
+    await this.validateRoleManagement(
+      userId,
+      groupRole.group.id,
+      groupRole.level,
+    );
 
     const usageCount = await this.userGroupRepository.count({
       where: { groupRole: { id } },

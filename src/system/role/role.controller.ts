@@ -11,7 +11,7 @@ export class RoleController {
   async createRole(@Body() createRoleDto: CreateRoleDto) {
     return this.roleService.createRole(createRoleDto);
   }
-  
+
   // Obtener todos los roles
   @Get('all')
   async getAllRoles() {

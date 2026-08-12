@@ -8,7 +8,7 @@ export class Assignment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Activity, activity => activity.assignments)
+  @ManyToOne(() => Activity, (activity) => activity.assignments)
   activity: Activity;
 
   @ManyToOne(() => Position)

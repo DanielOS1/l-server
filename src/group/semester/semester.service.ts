@@ -9,20 +9,22 @@ import { Repository } from 'typeorm';
 import { CreateSemesterDto } from './dto/create-semester.dto';
 import { UpdateSemesterDto } from './dto/update-semester.dto';
 import { Group } from '../group/entities/group.entity';
+import { GroupAccessService } from '../../common/group-access/group-access.service';
 
 @Injectable()
 export class SemesterService {
-  // Service methods will be implemented here
   constructor(
     @InjectRepository(Semester)
     private readonly semesterRepository: Repository<Semester>,
     @InjectRepository(Group)
     private readonly groupRepository: Repository<Group>,
+    private readonly groupAccessService: GroupAccessService,
   ) {}
 
   async create(
     groupId: string,
     createSemesterDto: CreateSemesterDto,
+    userId: string,
   ): Promise<Semester> {
     const { startDate, endDate } = createSemesterDto;
 
@@ -37,6 +39,8 @@ export class SemesterService {
       throw new NotFoundException('Group not found');
     }
 
+    await this.groupAccessService.assertMember(userId, groupId);
+
     const semester = this.semesterRepository.create({
       ...createSemesterDto,
       group,
@@ -44,14 +48,15 @@ export class SemesterService {
     return this.semesterRepository.save(semester);
   }
 
-  async findAllByGroup(groupId: string): Promise<Semester[]> {
+  async findAllByGroup(groupId: string, userId: string): Promise<Semester[]> {
+    await this.groupAccessService.assertMember(userId, groupId);
     return this.semesterRepository.find({
       where: { group: { id: groupId } },
       order: { startDate: 'DESC' },
     });
   }
 
-  async findOne(id: string): Promise<Semester> {
+  async findOne(id: string, userId: string): Promise<Semester> {
     const semester = await this.semesterRepository.findOne({
       where: { id },
       relations: ['group'],
@@ -59,14 +64,16 @@ export class SemesterService {
     if (!semester) {
       throw new NotFoundException('Semester not found');
     }
+    await this.groupAccessService.assertMember(userId, semester.group.id);
     return semester;
   }
 
   async update(
     id: string,
     updateSemesterDto: UpdateSemesterDto,
+    userId: string,
   ): Promise<Semester> {
-    const semester = await this.findOne(id);
+    const semester = await this.findOne(id, userId);
 
     if (updateSemesterDto.startDate && updateSemesterDto.endDate) {
       if (
@@ -89,8 +96,8 @@ export class SemesterService {
     return this.semesterRepository.save(semester);
   }
 
-  async remove(id: string): Promise<void> {
-    const semester = await this.findOne(id);
+  async remove(id: string, userId: string): Promise<void> {
+    const semester = await this.findOne(id, userId);
     await this.semesterRepository.remove(semester);
   }
 }

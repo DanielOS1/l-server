@@ -18,21 +18,24 @@ import { SaleModule } from './finance/sale/sale.module';
 import { SaleColumnModule } from './finance/sale-column/sale-column.module';
 import { SaleRowModule } from './finance/sale-row/sale-row.module';
 import { NoticesModule } from './notices/notices.module';
+import { GroupAccessModule } from './common/group-access/group-access.module';
 
 import { getDatabaseConfig } from './config/database.config';
+import { validateEnv } from './config/env.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // ignoreEnvFile: true, // Removed to allow .env loading
       expandVariables: true,
+      validate: validateEnv,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: getDatabaseConfig,
     }),
+    GroupAccessModule,
     AuthModule,
     UserModule,
     AssignmentModule,

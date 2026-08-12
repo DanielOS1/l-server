@@ -5,5 +5,4 @@ export interface IPermissions {
   canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
-
 }

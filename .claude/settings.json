@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm ci *)",
+      "Bash(npm run build *)",
+      "Bash(npm run lint *)",
+      "Bash(npm run format *)",
+      "Bash(npm run start:dev *)",
+      "Bash(npm test *)",
+      "Bash(npm run test:* *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npx prettier *)",
+      "Bash(npx jest *)",
+      "Bash(npx typeorm migration:show *)",
+      "Bash(npx typeorm-ts-node-commonjs migration:show *)",
+      "Bash(npm run migration:show *)",
+      "Bash(docker build *)",
+      "Bash(docker compose config *)",
+      "Bash(docker compose build *)",
+      "Bash(npm audit *)",
+      "Bash(npm outdated *)",
+      "Bash(find *)",
+      "Bash(xargs *)",
+      "Bash(basename *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git status *)",
+      "Bash(git branch *)"
+    ],
+    "deny": [
+      "Bash(npx typeorm migration:run *)",
+      "Bash(npx typeorm migration:revert *)",
+      "Bash(npm run migration:run *)",
+      "Bash(npm run migration:revert *)",
+      "Bash(docker push *)",
+      "Bash(docker rmi *)",
+      "Bash(gcloud run deploy *)",
+      "Bash(git push *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean *)",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)"
+    ]
+  }
+}

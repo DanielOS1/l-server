@@ -10,10 +10,9 @@ import { instanceToPlain } from 'class-transformer';
 import { SuccessResponse } from '../interfaces/api-response.interface';
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<
-  T,
-  SuccessResponse<T>
-> {
+export class TransformInterceptor<T>
+  implements NestInterceptor<T, SuccessResponse<T>>
+{
   intercept(
     context: ExecutionContext,
     next: CallHandler,

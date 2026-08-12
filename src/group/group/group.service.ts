@@ -15,6 +15,7 @@ import { User } from '../../user/entities/user.entity';
 import { GroupResponseDto } from './dto/group-response.dto';
 import { GroupRole } from '../group-role/entities/group-role.entity';
 import { ROLE_LEVELS } from '../group-role/constants/role-levels.constant';
+import { GroupAccessService } from '../../common/group-access/group-access.service';
 
 @Injectable()
 export class GroupService {
@@ -27,9 +28,10 @@ export class GroupService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(GroupRole)
     private readonly groupRoleRepository: Repository<GroupRole>,
+    private readonly groupAccessService: GroupAccessService,
   ) {}
 
-  async getById(id: string): Promise<GroupResponseDto> {
+  async getById(id: string, requesterId: string): Promise<GroupResponseDto> {
     const group = await this.groupRepository.findOne({
       where: { id },
       relations: [
@@ -45,22 +47,9 @@ export class GroupService {
       throw new NotFoundException('Group not found');
     }
 
+    await this.groupAccessService.assertMember(requesterId, id);
+
     return plainToInstance(GroupResponseDto, group, {
-      excludeExtraneousValues: false,
-    });
-  }
-
-  async getAll(): Promise<GroupResponseDto[]> {
-    const groups = await this.groupRepository.find({
-      relations: [
-        'userGroups',
-        'userGroups.user',
-        'userGroups.groupRole',
-        'roles',
-      ],
-    });
-
-    return plainToInstance(GroupResponseDto, groups, {
       excludeExtraneousValues: false,
     });
   }
@@ -155,7 +144,7 @@ export class GroupService {
       }),
     );
 
-    return this.getById(group.id);
+    return this.getById(group.id, userId);
   }
 
   async addMember(
@@ -214,7 +203,7 @@ export class GroupService {
       }),
     );
 
-    return this.getById(groupId);
+    return this.getById(groupId, requesterId);
   }
 
   async assignRole(
@@ -238,9 +227,11 @@ export class GroupService {
       }),
     ]);
 
-    if (!userGroup) throw new NotFoundException('El usuario no es miembro de este grupo');
+    if (!userGroup)
+      throw new NotFoundException('El usuario no es miembro de este grupo');
     if (!role) throw new NotFoundException('Rol no encontrado en este grupo');
-    if (!requesterUserGroup) throw new ForbiddenException('No eres miembro de este grupo');
+    if (!requesterUserGroup)
+      throw new ForbiddenException('No eres miembro de este grupo');
 
     if (
       !requesterUserGroup.groupRole ||
@@ -252,7 +243,9 @@ export class GroupService {
     }
 
     // Cannot manage a member with equal or higher level
-    if (requesterUserGroup.groupRole.level <= (userGroup.groupRole?.level ?? 0)) {
+    if (
+      requesterUserGroup.groupRole.level <= (userGroup.groupRole?.level ?? 0)
+    ) {
       throw new ForbiddenException(
         'No puedes modificar a un usuario con igual o mayor jerarquía que la tuya',
       );
@@ -267,13 +260,15 @@ export class GroupService {
 
     // Cannot assign the FOUNDER role (reserved for group creator)
     if (role.level >= ROLE_LEVELS.FOUNDER) {
-      throw new ForbiddenException('El rol de Fundador no puede ser asignado manualmente');
+      throw new ForbiddenException(
+        'El rol de Fundador no puede ser asignado manualmente',
+      );
     }
 
     userGroup.groupRole = role;
     await this.userGroupRepository.save(userGroup);
 
-    return this.getById(groupId);
+    return this.getById(groupId, requesterId);
   }
 
   async removeMember(
@@ -292,15 +287,15 @@ export class GroupService {
       }),
     ]);
 
-    if (!targetUserGroup) throw new NotFoundException('El usuario no es miembro de este grupo');
-    if (!requesterUserGroup) throw new ForbiddenException('No eres miembro de este grupo');
+    if (!targetUserGroup)
+      throw new NotFoundException('El usuario no es miembro de este grupo');
+    if (!requesterUserGroup)
+      throw new ForbiddenException('No eres miembro de este grupo');
 
     // Self-removal (leave group)
     if (requesterId === targetUserId) {
       if (targetUserGroup.groupRole?.level >= ROLE_LEVELS.FOUNDER) {
-        throw new ForbiddenException(
-          'El fundador no puede salirse del grupo',
-        );
+        throw new ForbiddenException('El fundador no puede salirse del grupo');
       }
       await this.userGroupRepository.remove(targetUserGroup);
       return;
@@ -317,7 +312,10 @@ export class GroupService {
     }
 
     // Cannot remove someone with equal or higher level (FOUNDER is automatically protected)
-    if (requesterUserGroup.groupRole.level <= (targetUserGroup.groupRole?.level ?? 0)) {
+    if (
+      requesterUserGroup.groupRole.level <=
+      (targetUserGroup.groupRole?.level ?? 0)
+    ) {
       throw new ForbiddenException(
         'No puedes remover a un usuario con igual o mayor jerarquía que la tuya',
       );

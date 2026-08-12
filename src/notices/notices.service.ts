@@ -22,7 +22,10 @@ export class NoticesService {
     private readonly userGroupRepository: Repository<UserGroup>,
   ) {}
 
-  private async assertCanManage(userId: string, groupId: string): Promise<void> {
+  private async assertCanManage(
+    userId: string,
+    groupId: string,
+  ): Promise<void> {
     const ug = await this.userGroupRepository.findOne({
       where: { user: { id: userId }, group: { id: groupId } },
       relations: ['groupRole'],
@@ -73,7 +76,11 @@ export class NoticesService {
     });
   }
 
-  async update(id: string, dto: UpdateNoticeDto, userId: string): Promise<Notice> {
+  async update(
+    id: string,
+    dto: UpdateNoticeDto,
+    userId: string,
+  ): Promise<Notice> {
     const notice = await this.noticeRepository.findOne({
       where: { id },
       relations: ['group', 'sender'],
@@ -111,7 +118,9 @@ export class NoticesService {
     });
     if (!notice) throw new NotFoundException('Aviso no encontrado');
     if (!notice.isSent) {
-      throw new BadRequestException('Solo se pueden desactivar avisos enviados');
+      throw new BadRequestException(
+        'Solo se pueden desactivar avisos enviados',
+      );
     }
     if (!notice.isActive) {
       throw new BadRequestException('El aviso ya está desactivado');

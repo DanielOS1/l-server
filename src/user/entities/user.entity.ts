@@ -2,14 +2,12 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { UserGroup } from 'src/group/user-group/entities/user-group.entity';
-import { Role } from 'src/system/role/entity/role.entity';
 import { Assignment } from 'src/assignment/entities/assignment.entity';
 
 @Entity('user')
@@ -41,7 +39,7 @@ export class User {
   @Column({ length: 100, unique: true })
   email: string;
 
-  @Column()
+  @Column({ select: false })
   @Exclude()
   password: string;
 

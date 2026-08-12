@@ -14,6 +14,7 @@ import { GroupRoleService } from './group-role.service';
 import { CreateGroupRoleDto } from './dto/create-group-role.dto';
 import { UpdateGroupRoleDto } from './dto/update-group-role.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { AuthenticatedRequest } from '../../auth/interfaces/authenticated-request.interface';
 
 @Controller('group-roles')
 @UseGuards(AuthGuard('jwt'))
@@ -21,12 +22,18 @@ export class GroupRoleController {
   constructor(private readonly groupRoleService: GroupRoleService) {}
 
   @Post()
-  create(@Request() req, @Body() createGroupRoleDto: CreateGroupRoleDto) {
+  create(
+    @Request() req: AuthenticatedRequest,
+    @Body() createGroupRoleDto: CreateGroupRoleDto,
+  ) {
     return this.groupRoleService.create(req.user.userId, createGroupRoleDto);
   }
 
   @Get()
-  findAll(@Request() req, @Query('groupId') groupId: string) {
+  findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query('groupId') groupId: string,
+  ) {
     return this.groupRoleService.findAll(groupId, req.user.userId);
   }
 
@@ -37,7 +44,7 @@ export class GroupRoleController {
 
   @Patch(':id')
   update(
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
     @Param('id') id: string,
     @Body() updateGroupRoleDto: UpdateGroupRoleDto,
   ) {
@@ -49,7 +56,7 @@ export class GroupRoleController {
   }
 
   @Delete(':id')
-  remove(@Request() req, @Param('id') id: string) {
+  remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.groupRoleService.remove(req.user.userId, id);
   }
 }

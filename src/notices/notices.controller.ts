@@ -11,6 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AuthenticatedRequest } from '../auth/interfaces/authenticated-request.interface';
 import { NoticesService } from './notices.service';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
@@ -22,7 +23,7 @@ export class NoticesController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Request() req, @Body() dto: CreateNoticeDto) {
+  create(@Request() req: AuthenticatedRequest, @Body() dto: CreateNoticeDto) {
     return this.noticesService.create(dto, req.user.userId);
   }
 
@@ -32,7 +33,10 @@ export class NoticesController {
   }
 
   @Get('group/:groupId/admin')
-  findForAdmin(@Param('groupId') groupId: string, @Request() req) {
+  findForAdmin(
+    @Param('groupId') groupId: string,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.noticesService.findForAdmin(groupId, req.user.userId);
   }
 
@@ -40,20 +44,20 @@ export class NoticesController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateNoticeDto,
-    @Request() req,
+    @Request() req: AuthenticatedRequest,
   ) {
     return this.noticesService.update(id, dto, req.user.userId);
   }
 
   @Patch(':id/send')
   @HttpCode(HttpStatus.OK)
-  send(@Param('id') id: string, @Request() req) {
+  send(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.noticesService.send(id, req.user.userId);
   }
 
   @Patch(':id/deactivate')
   @HttpCode(HttpStatus.OK)
-  deactivate(@Param('id') id: string, @Request() req) {
+  deactivate(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     return this.noticesService.deactivate(id, req.user.userId);
   }
 }

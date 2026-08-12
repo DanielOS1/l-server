@@ -15,7 +15,14 @@ import { UserGroup } from '../group/user-group/entities/user-group.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Assignment, Activity, ActivityPosition, Position, User, UserGroup]),
+    TypeOrmModule.forFeature([
+      Assignment,
+      Activity,
+      ActivityPosition,
+      Position,
+      User,
+      UserGroup,
+    ]),
     forwardRef(() => ActivityModule),
     forwardRef(() => PositionModule),
     UserModule,

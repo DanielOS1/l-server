@@ -1,21 +1,28 @@
-import { IsString, IsUUID, IsOptional, IsBoolean, IsEmail, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsBoolean,
+  IsEmail,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
-
 export class UserDto {
-    @IsUUID()
-    id: string;
-  
-    @IsString()
-    nombre: string;
-  
-    @IsString()
-    apellido: string;
-  
-    @IsEmail()
-    email: string;
-  }
-  
+  @IsUUID()
+  id: string;
+
+  @IsString()
+  nombre: string;
+
+  @IsString()
+  apellido: string;
+
+  @IsEmail()
+  email: string;
+}
+
 export class UserGroupDto {
   @IsUUID()
   id: string;
@@ -31,8 +38,6 @@ export class UserGroupDto {
   @Type(() => UserDto)
   user: UserDto;
 }
-
-
 
 export class GroupResponseDto {
   @IsUUID()

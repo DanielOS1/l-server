@@ -9,6 +9,7 @@ import { Goal } from './entities/goal.entity';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateGoalDto } from './dto/update-goal.dto';
 import { Group } from '../../group/group/entities/group.entity';
+import { GroupAccessService } from '../../common/group-access/group-access.service';
 
 @Injectable()
 export class GoalService {
@@ -17,15 +18,17 @@ export class GoalService {
     private readonly goalRepository: Repository<Goal>,
     @InjectRepository(Group)
     private readonly groupRepository: Repository<Group>,
+    private readonly groupAccessService: GroupAccessService,
   ) {}
 
-  async create(createGoalDto: CreateGoalDto): Promise<Goal> {
+  async create(createGoalDto: CreateGoalDto, userId: string): Promise<Goal> {
     const { groupId, isActive } = createGoalDto;
 
     const group = await this.groupRepository.findOne({
       where: { id: groupId },
     });
     if (!group) throw new NotFoundException('Group not found');
+    await this.groupAccessService.assertMember(userId, groupId);
 
     if (isActive) {
       const activeGoal = await this.goalRepository.findOne({
@@ -45,14 +48,16 @@ export class GoalService {
     return this.goalRepository.save(goal);
   }
 
-  async findAllByGroup(groupId: string): Promise<Goal[]> {
+  async findAllByGroup(groupId: string, userId: string): Promise<Goal[]> {
+    await this.groupAccessService.assertMember(userId, groupId);
     return this.goalRepository.find({
       where: { group: { id: groupId } },
       order: { createdAt: 'DESC' },
     });
   }
 
-  async findActiveByGroup(groupId: string): Promise<Goal> {
+  async findActiveByGroup(groupId: string, userId: string): Promise<Goal> {
+    await this.groupAccessService.assertMember(userId, groupId);
     const goal = await this.goalRepository.findOne({
       where: { group: { id: groupId }, isActive: true },
     });
@@ -61,17 +66,22 @@ export class GoalService {
     return goal;
   }
 
-  async findOne(id: string): Promise<Goal> {
+  async findOne(id: string, userId: string): Promise<Goal> {
     const goal = await this.goalRepository.findOne({
       where: { id },
       relations: ['group'],
     });
     if (!goal) throw new NotFoundException('Goal not found');
+    await this.groupAccessService.assertMember(userId, goal.group.id);
     return goal;
   }
 
-  async update(id: string, updateGoalDto: UpdateGoalDto): Promise<Goal> {
-    const goal = await this.findOne(id);
+  async update(
+    id: string,
+    updateGoalDto: UpdateGoalDto,
+    userId: string,
+  ): Promise<Goal> {
+    const goal = await this.findOne(id, userId);
 
     // If setting to active, check logic again
     if (updateGoalDto.isActive === true && !goal.isActive) {
@@ -89,8 +99,8 @@ export class GoalService {
     return this.goalRepository.save(goal);
   }
 
-  async remove(id: string): Promise<void> {
-    const goal = await this.findOne(id);
+  async remove(id: string, userId: string): Promise<void> {
+    const goal = await this.findOne(id, userId);
     await this.goalRepository.remove(goal);
   }
 }

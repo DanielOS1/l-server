@@ -14,6 +14,7 @@ import {
   SaleColumnType,
 } from '../../finance/sale-column/entities/sale-column.entity';
 import { User } from '../../user/entities/user.entity';
+import { GroupAccessService } from '../../common/group-access/group-access.service';
 
 @Injectable()
 export class SaleRowService {
@@ -27,16 +28,21 @@ export class SaleRowService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly dataSource: DataSource,
+    private readonly groupAccessService: GroupAccessService,
   ) {}
 
-  async create(createSaleRowDto: CreateSaleRowDto): Promise<SaleRow> {
+  async create(
+    createSaleRowDto: CreateSaleRowDto,
+    userId: string,
+  ): Promise<SaleRow> {
     const { saleId, addedByUserId, values } = createSaleRowDto;
 
     const sale = await this.saleRepository.findOne({
       where: { id: saleId },
-      relations: ['columns'],
+      relations: ['columns', 'goal', 'goal.group'],
     });
     if (!sale) throw new NotFoundException('Sale not found');
+    await this.groupAccessService.assertMember(userId, sale.goal.group.id);
 
     const user = await this.userRepository.findOne({
       where: { id: addedByUserId },
@@ -104,7 +110,7 @@ export class SaleRowService {
       }
 
       await queryRunner.commitTransaction();
-      return this.findOne(savedRow.id);
+      return this.findOne(savedRow.id, userId);
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -113,7 +119,14 @@ export class SaleRowService {
     }
   }
 
-  async findAllBySale(saleId: string): Promise<SaleRow[]> {
+  async findAllBySale(saleId: string, userId: string): Promise<SaleRow[]> {
+    const sale = await this.saleRepository.findOne({
+      where: { id: saleId },
+      relations: ['goal', 'goal.group'],
+    });
+    if (!sale) throw new NotFoundException('Sale not found');
+    await this.groupAccessService.assertMember(userId, sale.goal.group.id);
+
     return this.saleRowRepository.find({
       where: { sale: { id: saleId } },
       relations: ['values', 'values.column', 'addedBy'],
@@ -121,21 +134,29 @@ export class SaleRowService {
     });
   }
 
-  async findOne(id: string): Promise<SaleRow> {
+  async findOne(id: string, userId: string): Promise<SaleRow> {
     const row = await this.saleRowRepository.findOne({
       where: { id },
-      relations: ['values', 'values.column', 'addedBy'],
+      relations: [
+        'values',
+        'values.column',
+        'addedBy',
+        'sale',
+        'sale.goal',
+        'sale.goal.group',
+      ],
     });
     if (!row) throw new NotFoundException(`SaleRow #${id} not found`);
+    await this.groupAccessService.assertMember(userId, row.sale.goal.group.id);
     return row;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId: string): Promise<void> {
     // Must implement logic to decrease totalAmount before deleting
     // For MVP we might skip this or implement it carefully.
     // Let's implement basic total reduction.
 
-    const row = await this.findOne(id);
+    const row = await this.findOne(id, userId);
     if (!row) throw new NotFoundException('Row not found');
 
     // Calculate amount to subtract

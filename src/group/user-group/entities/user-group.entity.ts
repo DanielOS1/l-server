@@ -1,10 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  Column,
-  OneToMany,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from 'typeorm';
 import { User } from '../../../user/entities/user.entity';
 import { Group } from '../../group/entities/group.entity';
 import { GroupRole } from 'src/group/group-role/entities/group-role.entity';

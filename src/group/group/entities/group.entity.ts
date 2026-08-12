@@ -7,7 +7,6 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { UserGroup } from '../../user-group/entities/user-group.entity';
-import { Role } from '../../../system/role/entity/role.entity';
 import { GroupRole } from 'src/group/group-role/entities/group-role.entity';
 import { Semester } from '../../semester/entities/semester.entity';
 import { Goal } from '../../../finance/goal/entities/goal.entity';
