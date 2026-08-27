@@ -24,7 +24,11 @@ export class AuthService {
       .addSelect('user.password')
       .where('user.email = :email', { email })
       .getOne();
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (
+      user &&
+      user.password &&
+      (await bcrypt.compare(password, user.password))
+    ) {
       const { password: _password, ...result } = user;
       return result;
     }
