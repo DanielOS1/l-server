@@ -1,9 +1,3 @@
-// export interface ApiResponse<T> {
-//   status: string;
-//   message: string;
-//   data: T;
-// }
-
 export type ResponseStatus = 'success' | 'error' | 'fail';
 
 export interface BaseResponse {
@@ -17,7 +11,7 @@ export interface SuccessResponse<T> extends BaseResponse {
   data: T;
 }
 
-export interface ErrorReponse extends BaseResponse {
+export interface ErrorResponse extends BaseResponse {
   status: 'error' | 'fail';
   errors?: string[];
   path?: string;
@@ -26,7 +20,7 @@ export interface ErrorReponse extends BaseResponse {
 export interface PaginatedResponse<T> extends BaseResponse {
   status: 'success';
   data: T[];
-  paginatino: {
+  pagination: {
     total: number;
     page: number;
     limit: number;

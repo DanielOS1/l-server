@@ -6,13 +6,13 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { ErrorReponse } from '../interfaces/api-response.interface';
+import { ErrorResponse } from '../interfaces/api-response.interface';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(private readonly httpAdapaterHost: HttpAdapterHost) {}
+  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
   catch(exception: unknown, host: ArgumentsHost): void {
-    const { httpAdapter } = this.httpAdapaterHost;
+    const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
 
     const httpStatus: number =
@@ -69,7 +69,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         break;
     }
 
-    const errorResponse: ErrorReponse = {
+    const errorResponse: ErrorResponse = {
       status: httpStatus >= 500 ? 'error' : 'fail',
       message,
       timestamp: new Date().toISOString(),

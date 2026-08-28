@@ -73,10 +73,60 @@ El vínculo entre usuarios, cargos y actividades.
 
 ---
 
+## Stack Técnico
+
+- **Framework**: [NestJS](https://nestjs.com/) (Node.js + TypeScript)
+- **Base de datos**: PostgreSQL, vía [TypeORM](https://typeorm.io/) con migraciones (sin `synchronize`)
+- **Autenticación**: JWT (`@nestjs/jwt`, `passport-jwt`) + `bcrypt` para hashing de contraseñas
+- **Validación**: `class-validator` / `class-transformer`
+- **Seguridad**: `helmet`, `@nestjs/throttler`, CORS configurado por variable de entorno
+- **Contenedores**: Docker (build multi-stage)
+
 ## Configuración del Proyecto
 
 ```bash
 $ npm install
+```
+
+Copia `.env.example` a `.env` y completa los valores:
+
+```bash
+$ cp .env.example .env
+```
+
+| Variable | Descripción |
+| --- | --- |
+| `DATABASE_URL` | Cadena de conexión completa a Postgres (tiene prioridad si está definida) |
+| `DATABASE_HOST` / `PORT` / `USERNAME` / `PASSWORD` / `NAME` | Alternativa a `DATABASE_URL`, usada en desarrollo local |
+| `JWT_SECRET` | Secreto para firmar los tokens JWT |
+| `JWT_EXPIRATION` | Tiempo de expiración del token (ej. `7d`) |
+| `PORT` | Puerto donde escucha el servidor |
+| `FRONTEND_URL` | Origen permitido por CORS |
+
+### Base de datos local con Docker
+
+El repo incluye un `docker-compose.yml` con una instancia de Postgres para desarrollo:
+
+```bash
+$ docker compose up -d
+```
+
+Levanta un contenedor `postgres:15` en `localhost:5432` con las credenciales por defecto del `.env.example`.
+
+### Migraciones
+
+```bash
+# crear una migración vacía
+$ npm run typeorm:create-migration -- NombreDeLaMigracion
+
+# generar una migración a partir de cambios en las entities
+$ npm run typeorm:generate-migration -- NombreDeLaMigracion
+
+# aplicar migraciones pendientes
+$ npm run typeorm:run-migrations
+
+# revertir la última migración
+$ npm run typeorm:revert-migration
 ```
 
 ## Ejecución
@@ -101,3 +151,14 @@ $ npm run test
 # e2e tests
 $ npm run test:e2e
 ```
+
+## Despliegue
+
+El backend está desplegado en **Google Cloud Run**, dentro del proyecto `lolosapp-prod1`. La base de datos PostgreSQL corre en **Neon**, fuera de Google Cloud.
+
+Componentes usados en el proyecto de GCP:
+
+- **Cloud Run**: ejecuta el contenedor de la API.
+- **Artifact Registry** (`lolosapp-repo`): almacena la imagen Docker. La imagen se construye y sube localmente con `docker build` / `docker push` (Cloud Build quedó habilitado en el proyecto pero no se usa en el flujo actual).
+- **Secret Manager**: guarda `database-url` y `jwt-secret`, inyectados como variables de entorno en el servicio de Cloud Run.
+- **Neon**: hosting de la base de datos Postgres, conectada vía `DATABASE_URL`.
